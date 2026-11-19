@@ -1,0 +1,14 @@
+{
+  "mode": "offline",
+  "offline_order": 9,
+  "vocab_size": 768,
+  "max_new_tokens": 60,
+  "temperature": 0.8,
+  "top_k": 10,
+  "top_p": 0.9,
+  "ollama_url": "http://127.0.0.1:11434/api/generate",
+  "ollama_model": "qwen2.5:0.5b",
+  "browser_url_template": "https://www.google.com/search?q={q}",
+  "server_host": "0.0.0.0",
+  "server_port": 8080
+}

@@ -2,9 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.buddyapps.ethangpt">
 
+    <!-- Needed to talk to the local EthanGPT server running in Termux. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:label="EthanGPT"
         android:allowBackup="true"
+        android:usesCleartextTraffic="true"
         android:theme="@android:style/Theme.DeviceDefault">
 
         <activity

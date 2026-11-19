@@ -1,0 +1,100 @@
+EthanGPT is a tiny language model that you can build yourself on a phone.
+EthanGPT uses a tokenizer to turn text into numbers.
+The tokenizer turns words into tokens and tokens into numbers.
+The numbers go into a language model that predicts the next token.
+A language model learns patterns from text by reading many examples.
+Q: What is EthanGPT?
+A: EthanGPT is a small language model built from scratch in Python.
+Q: What is a token?
+A: A token is a small piece of text, such as a character or part of a word.
+Q: What is a vocabulary?
+A: A vocabulary is the list of all tokens and their integer ids.
+Q: How does a tokenizer work?
+A: A tokenizer splits text into tokens and maps each token to an id.
+Q: Can the model run offline?
+A: Yes, the offline model runs on your phone without internet.
+Q: Does EthanGPT need a GPU?
+A: No, EthanGPT is designed for a phone CPU with only NumPy.
+Q: How much RAM does EthanGPT need?
+A: A tiny model needs less than one gigabyte of free RAM.
+Q: What is BPE?
+A: BPE stands for byte pair encoding and it merges frequent pairs of characters.
+Q: What does encode mean?
+A: Encode means converting text into a list of number ids.
+Q: What does decode mean?
+A: Decode means converting number ids back into readable text.
+Q: What is temperature?
+A: Temperature controls how random the generated text will be.
+Q: What is top-k sampling?
+A: Top-k sampling keeps only the k most likely next tokens.
+Q: What is top-p sampling?
+A: Top-p sampling keeps tokens whose total probability reaches p.
+Q: Where are checkpoints saved?
+A: Checkpoints are saved in the checkpoints folder.
+Q: Can training continue later?
+A: Yes, load a checkpoint and continue training from it.
+Q: What is a transformer?
+A: A transformer is a neural network that uses self attention.
+Q: What is self attention?
+A: Self attention lets each token look at earlier tokens in the sequence.
+Q: What is an embedding?
+A: An embedding is a vector that represents the meaning of a token id.
+Q: What is a chat interface?
+A: A chat interface lets you type messages and read replies.
+Q: Can EthanGPT help with coding ideas?
+A: It can suggest simple ideas, but it is not a trained coding assistant.
+Q: Can EthanGPT connect to the browser?
+A: Yes, browser mode opens a web page with your question.
+Q: Which AI can EthanGPT use?
+A: It can use a local model, Open Code, Ollama, or a browser page.
+Q: Is Open Code free?
+A: Open Code is open source, but some providers behind it may charge.
+Q: How do I install Python on Android?
+A: Install Termux from F-Droid and run pkg install python.
+Q: How do I install NumPy?
+A: Run pkg install numpy inside Termux.
+Q: How do I run the tokenizer test?
+A: Run python tokenizer/test_tokenizer.py from the project folder.
+Q: How do I start the chat?
+A: Run python main.py chat from the project folder.
+Q: How do I start the local server?
+A: Run python main.py serve and open the app or a browser.
+The model learns that questions start with Q colon and answers start with A colon.
+The model learns the shape of short answers about EthanGPT.
+The model learns that tokens repeat across similar questions.
+Training text should be clean, diverse and large enough for the task.
+More data usually makes a language model better.
+A small model cannot know facts that are not in its training data.
+Always check important answers from a small model.
+EthanGPT saves its vocabulary as a JSON file.
+EthanGPT saves its model tables as a JSON file.
+EthanGPT can reload those files and continue chatting later.
+Offline mode never sends your text to the internet.
+Browser mode opens an external web page and may send your question there.
+Open Code mode uses the opencode command line tool if it is installed.
+Ollama mode talks to a local model server on your machine.
+Light coding ideas include renaming variables, writing small functions and planning steps.
+A light idea is not a guarantee that the code is correct.
+Test every generated code snippet before you use it.
+Keep prompts short when using a tiny offline model.
+Use browser mode or Open Code mode for harder questions.
+The tokenizer is shared by every mode so text handling stays consistent.
+The chatbot keeps a conversation history in memory.
+History helps the model see earlier messages in the conversation.
+Clear the history when you want to start a fresh topic.
+Temperature of zero always picks the most likely answer.
+Higher temperature makes answers more varied and sometimes wrong.
+Top-k and top-p make sampling safer and more focused.
+A checkpoint lets you stop training and resume without starting over.
+The parameter count is printed when the offline model is trained.
+The offline model has more than ten million dense-equivalent parameters on this corpus.
+The app shows the parameter count so you know what is running.
+Root replies in the app say clearly when the model is not trained.
+Honest status is better than pretending a tiny model is a large one.
+Build one stage at a time and test each stage before moving on.
+Stage one checked the phone and installed Python.
+Stage two built the tokenizer from scratch.
+Stage three will build the neural transformer.
+Stage four will train the neural model with checkpoints.
+Stage five will connect generation to the chat interface.
+This corpus is intentionally small so it trains quickly on a phone.
