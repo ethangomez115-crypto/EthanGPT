@@ -1,0 +1,25 @@
+{
+  "project": "EthanGPT",
+  "stage": 1,
+  "detected_on": "2026-11-18",
+  "detected_by": "Buddy via Samsung Settings > Device care > Memory",
+  "device": "Samsung Galaxy A06 5G",
+  "ram_total_gb": 4,
+  "ram_used_gb": 2.7,
+  "ram_used_percent": 68,
+  "ram_reserved_mb": 588,
+  "ram_free_approx_gb": 1.3,
+  "ram_plus_swap_gb": 4,
+  "storage_total_gb": 64,
+  "storage_used_gb": 61,
+  "storage_free_gb": 3,
+  "python_environment": "Termux (com.termux) is installed and bootstrapped",
+  "cpu_arch": "to be confirmed by config/environment_check.py (likely aarch64)",
+  "android_version": "to be confirmed by config/environment_check.py",
+  "planning_notes": [
+    "Only about 1.3 GB RAM is free right now: target a model under ~10 MB and training memory under ~700 MB.",
+    "RAM Plus (4 GB) is flash storage used as swap; it is slow, so do not count on it for training speed.",
+    "Only ~3 GB storage is free: keep datasets small and delete old checkpoints you no longer need.",
+    "PyTorch is not available in Termux; the model will be written with NumPy only."
+  ]
+}

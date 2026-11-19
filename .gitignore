@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Model artifacts (large; regenerate by training)
+checkpoints/*.npz
+checkpoints/*.pkl
+config/device_report.json
+
+# Android build intermediates
+android/build/intermediates/
+android/*.iml

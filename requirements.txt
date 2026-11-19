@@ -1,0 +1,13 @@
+# EthanGPT requirements
+# Only ONE hard dependency: NumPy. Everything else is built from scratch.
+
+numpy>=1.24,<3
+
+# Optional, and NOT recommended on Android/Termux:
+# PyTorch does not install on Termux. EthanGPT therefore implements the
+# transformer and backpropagation directly with NumPy.
+# torch>=2.0        # use only on a PC or in Google Colab
+
+# Also deliberately NOT used:
+# tokenizers, transformers, sentencepiece
+# Stage 2 builds our own tokenizer, so there is nothing to install.
