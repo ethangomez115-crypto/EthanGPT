@@ -1,8 +1,9 @@
 # EthanGPT — build a small language model from scratch on a phone
 
-**Status:** Stage 1 (device check), Stage 2 (BPE tokenizer) and the **v2 upgrade
-(offline 10M model + chatbot + browser/AI connectors + Android app)** are
-complete and tested. A neural transformer is still planned (see Roadmap).
+**Status:** Stage 1 (device check), Stage 2 (BPE tokenizer), the **v2 upgrade
+(offline 10M model + chatbot + browser/AI connectors)** and the **v3 inbuilt
+Android app** are complete and tested. A neural transformer is still planned
+(see Roadmap).
 
 ## What works right now
 
@@ -17,10 +18,16 @@ complete and tested. A neural transformer is still planned (see Roadmap).
   - `opencode` — runs the free, open-source `opencode` CLI if installed.
   - `ollama` — talks to a local Ollama model server (free, local).
   - `browser` — opens a web search on the phone.
-- **Local server** (`interface/server.py`) — HTTP chat endpoint so the Android
-  app or any browser on the network can talk to the model.
-- **Android app v2** (separate `EthanGPT-Android` project) — chat UI with mode
-  switching, Info, Web and Termux buttons.
+- **Local server** (`interface/server.py`) — optional HTTP chat endpoint so any
+  browser on the network can talk to the model.
+- **Android app v3** (separate `EthanGPT-Android` project) — the model is
+  **built into the app**: the tokenizer and the 10M-parameter N-gram model are
+  embedded as assets and run directly in Java. **No Termux, no server, no
+  internet.** It has a chat screen plus Web, Info and Clear buttons. The whole
+  app is ~97 KB and requests no permissions at all.
+- **Android export tool** (`tools/export_android_model.py`) — converts the
+  trained Python model into the compact `model.txt` the app loads, and writes
+  tokenizer test vectors that the Java port is checked against.
 
 > **Honesty note:** the offline model is a **count-based N-gram language model**,
 > not a neural transformer. Its "parameters" are a clearly-labelled
@@ -289,10 +296,8 @@ Change defaults in `config/settings.json`: `mode`, `offline_order`,
 - `POST /chat` with `{"message": "...", "mode": "offline"}` — returns
   `{"reply": "..."}`. `mode` is optional.
 
-From the app, set **Server** to `http://127.0.0.1:8080` (the app and Termux run
-on the same phone), tap **Info** to confirm the model is loaded, then chat. The
-**Web** button opens the server page in the phone browser; **Termux** jumps back
-to the terminal.
+The server is optional and mainly for desktop/browser use. **The Android app no
+longer needs it** — see the inbuilt app section below.
 
 ### Tests
 
@@ -314,6 +319,35 @@ count of `sum(contexts × vocabulary)` across N-gram orders. With
 checkpoint in `checkpoints/`. It fits easily in the phone's ~1.3 GB free RAM.
 Delete `checkpoints/ngram.json` and `checkpoints/tokenizer.json` to retrain after
 editing the corpus or settings.
+
+## v3 — inbuilt Android app (no Termux, no server)
+
+The app is now self-contained. The trained tokenizer and N-gram model are
+exported to `android/assets/model.txt` (~411 KB) and embedded in the APK, then
+loaded and run by pure-Java ports of the Python code:
+
+| Java class | Port of | Job |
+|---|---|---|
+| `BPETokenizer.java` | `tokenizer/bpe_tokenizer.py` | encode/decode text |
+| `NGramModel.java` | `model/ngram_lm.py` | backoff lookup + sampling |
+| `ChatBot.java` | `chatbot/chat.py` (offline) | `Q:/A:` replies + history |
+| `ModelLoader.java` | `tools/export_android_model.py` | parse `model.txt` |
+
+The port is verified on a desktop JVM before building: `desktoptest/SelfTest`
+checks 19 tokenizer vectors against the Python output (all match) and the exact
+10,874,880 parameter count.
+
+To regenerate the embedded model after changing the corpus/settings:
+
+```bash
+python3 tools/export_android_model.py \
+    ../EthanGPT-Android/assets ../EthanGPT-Android/desktoptest/vectors.txt
+bash ~/.buddy/work/.claude/skills/android-app/build-apk.sh ../EthanGPT-Android
+```
+
+The app requests **no permissions** and makes **no network calls**; the Web
+button only hands a search to your browser. It installs as an update over v2
+(versionCode 3) and keeps your data.
 
 ## Roadmap (planned, not yet built)
 - **Stage 3** — decoder-only transformer in NumPy: embeddings, positional
