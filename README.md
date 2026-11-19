@@ -6,8 +6,10 @@ starting the next one.
 
 **Also included:** an Android companion app (`android/`) with a signed APK at
 `android/build/app.apk`. It is an honest chat-style UI: the model is not trained
-yet, so it never pretends to give model answers. The source of this repository
-is public on GitHub so you can track progress.
+yet, so it never pretends to give model answers.
+
+**Public repository:** https://github.com/ethangomez115-crypto/EthanGPT
+**Download the APK:** https://github.com/ethangomez115-crypto/EthanGPT/raw/master/android/build/app.apk
 
 ---
 
