@@ -19,6 +19,7 @@ Description: |
   - Code IDE connected to chat ("Ask Nexus" and "Open in IDE").
   - Swipe in from the right edge on any tab to open the Code IDE; left edge opens the menu.
   - Clean code editor (view/edit code like Google AI Studio, with Copy / Preview / Ask Nexus).
+  - Google AI Studio-inspired dark UI and Kimi-style gradient pill buttons.
   - Chat backup to shared storage that survives uninstall/reinstall.
   - Share chats, files and images to any app (WhatsApp, Gmail, Drive...).
   - Terminal and Code IDE tabs.
@@ -29,8 +30,8 @@ Description: |
 RepoType: git
 Repo: https://github.com/ethangomez115-crypto/EthanGPT
 Builds:
-  - versionName: 15.3
-    versionCode: 33
+  - versionName: 15.4
+    versionCode: 34
     commit: master
     subdir: android
     # Built with the no-Gradle toolchain at .claude/skills/android-app/build-apk.sh

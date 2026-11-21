@@ -18,11 +18,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 public class TerminalView {
-    private static final int BG = 0xFF1A1A1A;
-    private static final int SURFACE = 0xFF2A2A2A;
-    private static final int TEXT = 0xFFF2F2F2;
-    private static final int DIM = 0xFF9A9A9A;
-    private static final int ACCENT = 0xFF10A37F;
+    private static final int BG = 0xFF1B1B1F;
+    private static final int SURFACE = 0xFF2A2A31;
+    private static final int TEXT = 0xFFF5F5F7;
+    private static final int DIM = 0xFF9AA0AA;
+    private static final int ACCENT = 0xFF8AB4F8;
     private static final int MAX_CHARS = 20000;
     private static final long TIMEOUT_MS = 15000L;
 

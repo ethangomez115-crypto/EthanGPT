@@ -30,16 +30,17 @@ FEATURES
 - Local website preview (loopback-only) and Code IDE connected to chat
 - Swipe in from the right edge on any tab to open the Code IDE; left edge opens the menu
 - Clean code editor to view and edit code like Google AI Studio (Copy / Preview / Ask Nexus)
+- Google AI Studio-inspired dark interface with Kimi-style gradient pill buttons
 - Real WebView browser with "Open in browser" and "Share link"
 - Works on low-RAM phones (auto-switches to online mode below 8 GB RAM)
 - Desktop app for Windows, Linux and macOS (Java 11+)
 
 DOWNLOADS
-- Android: Nexus-AI-v15.3.apk (Android 8.0+, install from unknown sources)
-- Desktop: Nexus-AI-Desktop-v15.3.zip (unzip, run java -jar nexus-ai.jar)
+- Android: Nexus-AI-v15.4.apk (Android 8.0+, install from unknown sources)
+- Desktop: Nexus-AI-Desktop-v15.4.zip (unzip, run java -jar nexus-ai.jar)
 
 VERIFY
-APK SHA-256: 21039f382fe9a3f49f2dcc060720ac6d818d242baf11d24105f71a3336c9b850
-Desktop ZIP SHA-256: 644fad44841f1ff48dc5a63e3a162273f5896eb65112780cf44c206ebe2597e3
+APK SHA-256: 4c10d5352fa1185de420bd167eeaa6ec92f96b9d427d17794fae7560ec6a3fcd
+Desktop ZIP SHA-256: a8d64b0db4816edf57c8cca3075bd30b8a0fd52ba3a47566147b6aa76d363853
 
 Source: https://github.com/ethangomez115-crypto/EthanGPT

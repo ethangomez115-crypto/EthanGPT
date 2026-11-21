@@ -56,13 +56,13 @@ public class CodeIdeView {
         if (sOpenRunnable != null) sOpenRunnable.run();
     }
 
-    private static final int BG = 0xFF1A1A1A;
-    private static final int SURFACE = 0xFF2A2A2A;
-    private static final int EDITOR = 0xFF232323;
+    private static final int BG = 0xFF1B1B1F;
+    private static final int SURFACE = 0xFF2A2A31;
+    private static final int EDITOR = 0xFF232329;
     private static final int OUTPUT_BG = 0xFF1B1B1B;
-    private static final int TEXT = 0xFFF2F2F2;
-    private static final int DIM = 0xFF9A9A9A;
-    private static final int ACCENT = 0xFF10A37F;
+    private static final int TEXT = 0xFFF5F5F7;
+    private static final int DIM = 0xFF9AA0AA;
+    private static final int ACCENT = 0xFF8AB4F8;
     private static final int KEYWORD = 0xFFC586C0;
     private static final int STRING = 0xFFCE9178;
     private static final int COMMENT = 0xFF6A9955;
@@ -233,11 +233,11 @@ public class CodeIdeView {
         actionsLp.topMargin = dp(ctx, 8);
         actions.setLayoutParams(actionsLp);
 
-        final Button copyBtn = button(ctx, "Copy code", SURFACE, TEXT);
+        final Button copyBtn = button(ctx, "Copy code", ACCENT, Color.WHITE);
         actions.addView(copyBtn, smallButtonParams(ctx));
         final Button previewBtn = button(ctx, "Preview site", SURFACE, TEXT);
         actions.addView(previewBtn, smallButtonParams(ctx));
-        final Button askBtn = button(ctx, "Ask Nexus", SURFACE, TEXT);
+        final Button askBtn = button(ctx, "Ask Nexus", ACCENT, Color.WHITE);
         actions.addView(askBtn, smallButtonParams(ctx));
         root.addView(actions);
 
@@ -686,10 +686,18 @@ public class CodeIdeView {
         b.setTextSize(11f);
         b.setTextColor(fg);
         b.setMinimumWidth(0);
-        b.setPadding(dp(ctx, 8), dp(ctx, 2), dp(ctx, 8), dp(ctx, 2));
-        GradientDrawable gd = new GradientDrawable();
-        gd.setColor(bg);
-        gd.setCornerRadius(dp(ctx, 5));
+        b.setAllCaps(false);
+        b.setPadding(dp(ctx, 12), dp(ctx, 7), dp(ctx, 12), dp(ctx, 7));
+        GradientDrawable gd;
+        if (bg == ACCENT) {
+            // Kimi-style gradient pill for primary actions.
+            gd = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+                    new int[] { 0xFF7C6BFF, 0xFF4F8DF7 });
+        } else {
+            gd = new GradientDrawable();
+            gd.setColor(bg);
+        }
+        gd.setCornerRadius(dp(ctx, 18));
         b.setBackground(gd);
         return b;
     }

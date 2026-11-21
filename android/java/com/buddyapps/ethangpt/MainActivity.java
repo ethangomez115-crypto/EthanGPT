@@ -106,13 +106,16 @@ public class MainActivity extends Activity {
     private static final int REQ_RECORD_AUDIO = 1;
 
     // Kimi-like palette.
-    private static final int C_BG = 0xFF1A1A1A;
-    private static final int C_SURFACE = 0xFF2A2A2A;
-    private static final int C_SURFACE_2 = 0xFF303030;
-    private static final int C_DRAWER = 0xFF1E1E1E;
-    private static final int C_TEXT = 0xFFF2F2F2;
-    private static final int C_TEXT_DIM = 0xFF9A9A9A;
-    private static final int C_ACCENT = 0xFF10A37F;
+    // Google AI Studio-inspired dark palette with Kimi-style gradient accents.
+    private static final int C_BG = 0xFF1B1B1F;
+    private static final int C_SURFACE = 0xFF2A2A31;
+    private static final int C_SURFACE_2 = 0xFF34343C;
+    private static final int C_DRAWER = 0xFF202024;
+    private static final int C_TEXT = 0xFFF5F5F7;
+    private static final int C_TEXT_DIM = 0xFF9AA0AA;
+    private static final int C_ACCENT = 0xFF8AB4F8;   // AI Studio blue
+    private static final int C_GRAD_A = 0xFF7C6BFF;   // Kimi violet
+    private static final int C_GRAD_B = 0xFF4F8DF7;   // Kimi blue
 
     // --- chat screen ---
     private SwipeScrollView chatScroll;
@@ -231,7 +234,9 @@ public class MainActivity extends Activity {
         statusText.setTextSize(13);
         statusText.setTextColor(C_TEXT);
         statusText.setPadding(dp(16), dp(9), dp(16), dp(9));
-        statusText.setBackground(rounded(C_SURFACE, 22));
+        GradientDrawable statusBg = gradientPill(0xFF2E2A45, 0xFF232B45, 22);
+        statusBg.setStroke(dp(1), 0xFF41415A);
+        statusText.setBackground(statusBg);
         statusText.setSingleLine(true);
         LinearLayout.LayoutParams pl = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -339,16 +344,18 @@ public class MainActivity extends Activity {
         inputPill.setOrientation(LinearLayout.HORIZONTAL);
         inputPill.setGravity(Gravity.CENTER_VERTICAL);
         inputPill.setPadding(dp(6), dp(6), dp(6), dp(6));
-        inputPill.setBackground(rounded(0xFF262626, 30));
+        GradientDrawable inputBg = rounded(0xFF26262D, 30);
+        inputBg.setStroke(dp(1), 0xFF3A3A46);
+        inputPill.setBackground(inputBg);
 
-        FrameLayout plus = iconButton(IconView.PLUS, 40, 0xFF3A3A3A, C_TEXT);
+        FrameLayout plus = iconButton(IconView.PLUS, 40, C_SURFACE_2, C_ACCENT);
         plus.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { newChat(); }
         });
         inputPill.addView(plus);
 
         input = new EditText(this);
-        input.setHint("Ask me. Task me.");
+        input.setHint("Ask Nexus anything…");
         input.setHintTextColor(0xFF8A8A8A);
         input.setTextColor(C_TEXT);
         input.setTextSize(15);
@@ -427,7 +434,7 @@ public class MainActivity extends Activity {
         final String[] tabNames = new String[] { "Chat", "Terminal", "Code", "Web" };
         LinearLayout tabBar = new LinearLayout(this);
         tabBar.setOrientation(LinearLayout.HORIZONTAL);
-        tabBar.setBackgroundColor(0xFF161616);
+        tabBar.setBackgroundColor(0xFF16161A);
         tabBar.setPadding(0, dp(6), 0, Math.max(bottomInset, dp(8)));
         for (int i = 0; i < tabNames.length; i++) {
             final int idx = i;
@@ -523,6 +530,14 @@ public class MainActivity extends Activity {
         return g;
     }
 
+    /** Kimi-style gradient pill used for primary buttons and accents. */
+    private GradientDrawable gradientPill(int a, int b, int radiusDp) {
+        GradientDrawable g = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+                new int[] { a, b });
+        g.setCornerRadius(dp(radiusDp));
+        return g;
+    }
+
     private int statusBarHeight() {
         int id = getResources().getIdentifier("status_bar_height", "dimen", "android");
         return id > 0 ? getResources().getDimensionPixelSize(id) : dp(24);
@@ -578,14 +593,16 @@ public class MainActivity extends Activity {
         chip.setOrientation(LinearLayout.HORIZONTAL);
         chip.setGravity(Gravity.CENTER_VERTICAL);
         chip.setPadding(dp(14), dp(9), dp(16), dp(9));
-        chip.setBackground(rounded(C_SURFACE, 22));
+        GradientDrawable chipBg = gradientPill(0xFF2E2A45, 0xFF232B45, 22);
+        chipBg.setStroke(dp(1), 0xFF41415A);
+        chip.setBackground(chipBg);
         IconView ic = new IconView(this, iconType);
-        ic.setColor(0xFFCFCFCF);
+        ic.setColor(C_ACCENT);
         chip.addView(ic, new LinearLayout.LayoutParams(dp(18), dp(18)));
         TextView tv = new TextView(this);
         tv.setText(label);
         tv.setTextSize(13);
-        tv.setTextColor(0xFFE8E8E8);
+        tv.setTextColor(C_TEXT);
         LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         tl.leftMargin = dp(8);
@@ -1553,9 +1570,9 @@ public class MainActivity extends Activity {
     // --------------------------- action button ------------------------------ //
     private void buildActionButton() {
         actionButton = new FrameLayout(this);
-        actionBg = new GradientDrawable();
+        actionBg = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+                new int[] { C_SURFACE_2, C_SURFACE_2 });
         actionBg.setShape(GradientDrawable.OVAL);
-        actionBg.setColor(0xFF3A3A3A);
         actionButton.setBackground(actionBg);
         int size = dp(44);
         actionButton.setLayoutParams(new LinearLayout.LayoutParams(size, size));
@@ -1584,13 +1601,13 @@ public class MainActivity extends Activity {
     private void updateActionButton() {
         if (actionIcon == null) return;
         if (voiceMode) {
-            actionBg.setColor(0xFFC05A5A);
+            actionBg.setColors(new int[] { 0xFFF06A6A, 0xFFC0446A });
             actionIcon.setType(IconView.STOP);
         } else if (input != null && !input.getText().toString().trim().isEmpty()) {
-            actionBg.setColor(C_ACCENT);
+            actionBg.setColors(new int[] { C_GRAD_A, C_GRAD_B });
             actionIcon.setType(IconView.SEND);
         } else {
-            actionBg.setColor(0xFF3A3A3A);
+            actionBg.setColors(new int[] { C_SURFACE_2, C_SURFACE_2 });
             actionIcon.setType(IconView.MIC);
         }
     }
@@ -1902,47 +1919,112 @@ public class MainActivity extends Activity {
         LinearLayout col = new LinearLayout(this);
         col.setOrientation(LinearLayout.VERTICAL);
         col.setGravity(Gravity.CENTER_HORIZONTAL);
-        col.setPadding(dp(16), 0, dp(16), dp(40));
+        col.setPadding(dp(20), dp(8), dp(20), dp(16));
 
         OrbView orb = new OrbView(this);
         orb.setClickable(true);
         orb.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { toggleVoiceMode(); }
         });
-        col.addView(orb, new LinearLayout.LayoutParams(dp(88), dp(88)));
+        col.addView(orb, new LinearLayout.LayoutParams(dp(72), dp(72)));
 
         TextView hi = new TextView(this);
-        hi.setText("Hi, what would you like to do with Nexus AI today?");
-        hi.setTextSize(20);
+        hi.setText("What can I help with?");
+        hi.setTextSize(22);
+        hi.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         hi.setTextColor(C_TEXT);
         hi.setGravity(Gravity.CENTER);
-        hi.setLineSpacing(dp(4), 1.15f);
         LinearLayout.LayoutParams hl = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        hl.topMargin = dp(28);
+        hl.topMargin = dp(18);
         col.addView(hi, hl);
 
-        TextView sayHi = new TextView(this);
-        sayHi.setText("Say hi");
-        sayHi.setTextSize(14);
-        sayHi.setTextColor(0xFFEDEDED);
-        sayHi.setPadding(dp(26), dp(10), dp(26), dp(10));
-        sayHi.setBackground(rounded(0xFF2E2E2E, 24));
-        LinearLayout.LayoutParams sl = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        sl.topMargin = dp(20);
-        sayHi.setLayoutParams(sl);
-        sayHi.setClickable(true);
-        sayHi.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { toggleVoiceMode(); }
-        });
-        col.addView(sayHi);
+        TextView sub = new TextView(this);
+        sub.setText("Nexus AI · private, offline-ready assistant");
+        sub.setTextSize(12);
+        sub.setTextColor(C_TEXT_DIM);
+        sub.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams subl = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        subl.topMargin = dp(6);
+        col.addView(sub, subl);
+
+        // AI Studio-style suggestion cards, tappable to prefill the prompt box.
+        LinearLayout grid = new LinearLayout(this);
+        grid.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams gl = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        gl.topMargin = dp(22);
+        grid.setLayoutParams(gl);
+
+        grid.addView(suggestionRow(
+                suggestion(IconView.SPARKLE, "Create image", "Create an image of "),
+                suggestion(IconView.CODE, "Write code", "Write code that ")));
+
+        LinearLayout r2 = suggestionRow(
+                suggestion(IconView.SPARKLE, "Explain topic", "Explain "),
+                suggestion(IconView.CODE, "Summarize text", "Summarize this text: "));
+        LinearLayout.LayoutParams r2lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        r2lp.topMargin = dp(10);
+        r2.setLayoutParams(r2lp);
+        grid.addView(r2);
+        col.addView(grid);
 
         holder.addView(col, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
                 Gravity.CENTER));
         chatList.addView(holder);
         welcomeView = holder;
+    }
+
+    /** One AI Studio-style suggestion card; tapping it fills the prompt box. */
+    private View suggestion(int iconType, String label, final String prompt) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.HORIZONTAL);
+        card.setGravity(Gravity.CENTER_VERTICAL);
+        card.setPadding(dp(11), dp(10), dp(8), dp(10));
+        GradientDrawable bg = gradientPill(0xFF2E2A45, 0xFF232B45, 16);
+        bg.setStroke(dp(1), 0xFF41415A);
+        card.setBackground(bg);
+        IconView ic = new IconView(this, iconType);
+        ic.setColor(C_ACCENT);
+        card.addView(ic, new LinearLayout.LayoutParams(dp(18), dp(18)));
+        TextView t = new TextView(this);
+        t.setText(label);
+        t.setTextSize(12);
+        t.setSingleLine(true);
+        t.setTextColor(C_TEXT);
+        LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        tl.leftMargin = dp(9);
+        t.setLayoutParams(tl);
+        card.addView(t);
+        card.setClickable(true);
+        card.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                input.setText(prompt);
+                input.setSelection(prompt.length());
+                input.requestFocus();
+            }
+        });
+        return card;
+    }
+
+    private LinearLayout suggestionRow(View left, View right) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams l = new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        l.setMargins(0, 0, dp(5), 0);
+        left.setLayoutParams(l);
+        LinearLayout.LayoutParams r = new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        r.setMargins(dp(5), 0, 0, 0);
+        right.setLayoutParams(r);
+        row.addView(left);
+        row.addView(right);
+        return row;
     }
 
     private void removeWelcome() {
@@ -2284,7 +2366,7 @@ public class MainActivity extends Activity {
                 bubble.setTextColor(C_TEXT);
                 bubble.setPadding(dp(16), dp(10), dp(16), dp(10));
                 bubble.setMaxWidth((int) (getResources().getDisplayMetrics().widthPixels * 0.8));
-                bubble.setBackground(rounded(0xFF2E2E2E, 20));
+                bubble.setBackground(gradientPill(0xFF3A3355, 0xFF2C3A55, 20));
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                 lp.gravity = Gravity.END;
@@ -2500,8 +2582,10 @@ public class MainActivity extends Activity {
         t.setText(label);
         t.setTextSize(11);
         t.setTextColor(C_ACCENT);
-        t.setPadding(dp(9), dp(4), dp(9), dp(4));
-        t.setBackground(rounded(C_SURFACE, 10));
+        t.setPadding(dp(9), dp(5), dp(9), dp(5));
+        GradientDrawable actionBgLocal = gradientPill(0xFF2E2A45, 0xFF232B45, 12);
+        actionBgLocal.setStroke(dp(1), 0xFF41415A);
+        t.setBackground(actionBgLocal);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.rightMargin = dp(6);
