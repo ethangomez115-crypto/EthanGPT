@@ -16,6 +16,7 @@ Description: |
   - Interactive chat text: select, copy, save to file, share and preview.
   - Keyless image generation from a text prompt; save, share or open images.
   - Projects screen: a list of generated sites that open in a full-screen local preview.
+  - New /create skill: describe anything and the model builds a complete HTML page, saves it as a project and opens the preview automatically.
   - Model presets: Nexus 3.1 Pro / 2.8 Preview / Instant, with thinking effort and context length controls.
   - Half-width swipe-out drawer that keeps the chat visible beside it.
   - Chat is the only screen; the Code IDE and web browser have been removed.
@@ -31,8 +32,8 @@ Description: |
 RepoType: git
 Repo: https://github.com/ethangomez115-crypto/EthanGPT
 Builds:
-  - versionName: 15.9
-    versionCode: 44
+  - versionName: 16.0
+    versionCode: 45
     commit: master
     subdir: android
     # Built with the no-Gradle toolchain at .claude/skills/android-app/build-apk.sh

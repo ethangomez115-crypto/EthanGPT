@@ -163,6 +163,7 @@ public class MainActivity extends Activity {
 
     // --- chat is the only screen; projects + model settings open over it ---
     private ProjectsView projectsView;
+    private boolean pendingCreatePreview = false;
     private View projectsOverlay;
     private View modelOverlay;
     private TextView modelCurrentValue;
@@ -2227,7 +2228,7 @@ public class MainActivity extends Activity {
 
         // Claude Code-style slash-command hint; opens the Skills menu.
         TextView skillsHint = new TextView(this);
-        skillsHint.setText("Skills: /review  /fix  /test  /docs     Browse all →");
+        skillsHint.setText("Skills: /create  /review  /fix  /docs     Browse all →");
         skillsHint.setTextSize(12);
         skillsHint.setTextColor(C_ACCENT);
         skillsHint.setPadding(dp(12), dp(8), dp(12), dp(8));
@@ -2407,6 +2408,8 @@ public class MainActivity extends Activity {
         // Claude Code-style slash-command skills. Each one pre-fills a real
         // prompt in the chat box — the user can edit it before sending.
         menu.addView(sectionLabel("Skills"));
+        menu.addView(skillRow("/create", "Build anything and preview it", IconView.SPARKLE,
+                "/create "));
         menu.addView(skillRow("/review", "Find bugs and improvements", IconView.CODE,
                 "Review the following code for bugs, security issues and style problems. "
                         + "For each issue, explain why it matters and show the fix:\n\n"));
@@ -2780,8 +2783,44 @@ public class MainActivity extends Activity {
                 chatList.addView(wrap);
                 scrollToBottom();
                 if (speak) speakReply(text);
+                if (pendingCreatePreview) maybeAutoPreview(text);
             }
         });
+    }
+
+    /** For /create: turn the model's code reply into a project and open its preview. */
+    private void maybeAutoPreview(String text) {
+        if (!pendingCreatePreview) return;
+        if (text.startsWith("No online key is available, so I'm using the built-in model")) {
+            return; // an info message; the real answer follows
+        }
+        pendingCreatePreview = false;
+        boolean hasCode = text.contains("```") || text.contains("<!doctype")
+                || text.toLowerCase(java.util.Locale.ROOT).contains("<html");
+        if (!hasCode) {
+            Toast.makeText(this, "No code in the reply — nothing to preview",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String code = extractCode(text);
+        String lower = code.toLowerCase(java.util.Locale.ROOT);
+        String html = code;
+        if (!lower.contains("<html") && !lower.contains("<!doctype")) {
+            html = "<!doctype html><html><head><meta charset=\"utf-8\">"
+                    + "<title>Nexus preview</title></head>"
+                    + "<body style=\"background:#1f1e1d;color:#f5f4ef;"
+                    + "font-family:monospace;padding:16px;white-space:pre-wrap\">"
+                    + android.text.TextUtils.htmlEncode(code)
+                    + "</body></html>";
+        }
+        String name = ProjectsView.save(this, html, "Website");
+        if (name == null) {
+            Toast.makeText(this, "Could not save the preview", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Toast.makeText(this, "Created a new project — opening preview",
+                Toast.LENGTH_SHORT).show();
+        openProjects();
     }
 
     /** Generate an image from the text in the chat box (free, no key needed). */
@@ -2982,6 +3021,10 @@ public class MainActivity extends Activity {
             maybeRestartListening();
             return;
         }
+        String rawCmd = raw.startsWith("/")
+                ? (raw.indexOf(' ') < 0 ? raw : raw.substring(0, raw.indexOf(' ')))
+                : "";
+        pendingCreatePreview = rawCmd.equals("/create");
         final String text = expandSkill(raw);
         input.setText("");
         addUserMessage(raw);
@@ -3004,7 +3047,13 @@ public class MainActivity extends Activity {
         String cmd = split < 0 ? text : text.substring(0, split);
         String rest = split < 0 ? "" : text.substring(split + 1).trim();
         String prefix;
-        if (cmd.equals("/review")) {
+        if (cmd.equals("/create")) {
+            prefix = "Create a complete, self-contained HTML page for the request below. "
+                    + "Reply with ONE fenced ```html code block containing the entire page "
+                    + "(doctype, html, head with inline CSS, body with inline JS). Use no "
+                    + "external files or libraries, and write no text before or after the "
+                    + "code.\n\nRequest: ";
+        } else if (cmd.equals("/review")) {
             prefix = "Review the following code for bugs, security issues and style "
                     + "problems. For each issue, explain why it matters and show the fix:\n\n";
         } else if (cmd.equals("/explain")) {
