@@ -2355,13 +2355,21 @@ public class MainActivity extends Activity {
         titles.addView(sub);
         top.addView(titles);
 
-        // Hidden key access: long-press the drawer title to open provider / key
-        // settings without adding another visible button to the UI.
-        top.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override public boolean onLongClick(View v) {
-                closeDrawer();
-                showOnlineSettings();
-                return true;
+        // Hidden key access: five rapid taps on the drawer header open the
+        // minimal key dialog, with no visible button added to the UI.
+        final long[] lastTitleTap = new long[] { 0L };
+        final int[] titleTaps = new int[] { 0 };
+        top.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                long now = System.currentTimeMillis();
+                titleTaps[0] = (now - lastTitleTap[0] < 3000L) ? titleTaps[0] + 1 : 1;
+                lastTitleTap[0] = now;
+                if (titleTaps[0] >= 5) {
+                    titleTaps[0] = 0;
+                    lastTitleTap[0] = 0L;
+                    closeDrawer();
+                    showKeyDialog();
+                }
             }
         });
 
@@ -3167,37 +3175,12 @@ public class MainActivity extends Activity {
                 .show();
     }
 
-    // --------------------------- online settings ---------------------------- //
-    /** Provider (including DeepSeek), API key and model, all stored locally. */
-    private void showOnlineSettings() {
-        final int[] provider = new int[] { prefs.getInt(PREF_PROVIDER, 0) };
-        if (provider[0] < 0 || provider[0] >= OnlineClient.PROVIDER_IDS.length) provider[0] = 0;
-
-        ScrollView scroll = new ScrollView(this);
+    // --------------------------- hidden key access -------------------------- //
+    /** Minimal local key dialog, reachable only via five taps on the drawer header. */
+    private void showKeyDialog() {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
-        box.setPadding(dp(20), dp(12), dp(20), dp(8));
-        scroll.addView(box);
-
-        TextView h = new TextView(this);
-        h.setText("Online provider");
-        h.setTextSize(14);
-        h.setTextColor(C_ACCENT);
-        box.addView(h);
-
-        final Spinner spinner = new Spinner(this);
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, OnlineClient.PROVIDER_LABELS);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner.setAdapter(adapter);
-        spinner.setSelection(provider[0]);
-        box.addView(spinner);
-
-        final TextView note = new TextView(this);
-        note.setTextSize(12);
-        note.setTextColor(C_TEXT_DIM);
-        note.setPadding(0, dp(8), 0, dp(10));
-        box.addView(note);
+        box.setPadding(dp(20), dp(12), dp(20), dp(4));
 
         TextView keyLabel = new TextView(this);
         keyLabel.setText("API key (stored only on this device)");
@@ -3207,75 +3190,20 @@ public class MainActivity extends Activity {
         final EditText key = new EditText(this);
         key.setSingleLine(true);
         key.setHint("Paste your key here");
-        key.setText(prefs.getString(PREF_KEY, ""));
         box.addView(key);
 
-        TextView modelLabel = new TextView(this);
-        modelLabel.setText("Model (leave blank for the default)");
-        modelLabel.setTextColor(C_TEXT);
-        modelLabel.setPadding(0, dp(10), 0, dp(2));
-        box.addView(modelLabel);
-        final EditText model = new EditText(this);
-        model.setSingleLine(true);
-        model.setHint(OnlineClient.defaultModel(provider[0]));
-        model.setText(prefs.getString(PREF_MODEL, ""));
-        box.addView(model);
-
-        Button getKey = new Button(this);
-        getKey.setText("Get a free key for this provider");
-        getKey.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-        box.addView(getKey);
-
-        Button freeModels = new Button(this);
-        freeModels.setText("Browse free OpenRouter models");
-        freeModels.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-        box.addView(freeModels);
-
-        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override public void onItemSelected(AdapterView<?> p, View v, int pos, long id) {
-                provider[0] = pos;
-                model.setHint(OnlineClient.defaultModel(pos));
-                note.setText("Offline model stays available. Online mode needs your own key from "
-                        + OnlineClient.PROVIDER_LABELS[pos] + " — it is never bundled in the app.");
-            }
-            @Override public void onNothingSelected(AdapterView<?> p) { }
-        });
-
-        getKey.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                try {
-                    Intent i = new Intent(Intent.ACTION_VIEW,
-                            Uri.parse(OnlineClient.KEY_URLS[provider[0]]));
-                    startActivity(i);
-                } catch (Exception e) {
-                    Toast.makeText(MainActivity.this, "No browser app found",
-                            Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-        freeModels.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { showFreeModelPicker(); }
-        });
-
         new AlertDialog.Builder(this)
-                .setTitle("Online settings")
-                .setView(scroll)
+                .setTitle("Key")
+                .setView(box)
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Save", new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int which) {
                         String k = key.getText().toString().trim();
-                        String m = model.getText().toString().trim();
-                        prefs.edit()
-                                .putInt(PREF_PROVIDER, provider[0])
-                                .putString(PREF_KEY, k)
-                                .putString(PREF_MODEL, m)
-                                .apply();
+                        prefs.edit().putString(PREF_KEY, k).apply();
                         updateStatus();
                         Toast.makeText(MainActivity.this,
-                                k.isEmpty() ? "Online key cleared — offline model active"
-                                        : "Saved " + OnlineClient.PROVIDER_LABELS[provider[0]],
+                                k.isEmpty() ? "Key cleared — offline model active"
+                                        : "Key saved on this device",
                                 Toast.LENGTH_SHORT).show();
                     }
                 })

@@ -19,7 +19,7 @@ Description: |
   - Model presets: Nexus 3.1 Pro / 2.8 Preview / Instant, with thinking effort and context length controls.
   - Half-width swipe-out drawer that keeps the chat visible beside it.
   - Chat is the only screen; the Code IDE and web browser have been removed.
-  - Hidden provider / key settings: long-press the drawer title.
+  - Hidden key access: tap the drawer title five times quickly to open a small key-only dialog (your saved key is never displayed).
   - Claude Code-inspired warm dark theme with cream text and terracotta accents.
   - Skills menu with slash commands (/review, /fix, /test, /docs and more) that load real prompts into chat.
   - Plus button attaches any file to the chat (text up to 20,000 characters, binary files by size).
@@ -31,8 +31,8 @@ Description: |
 RepoType: git
 Repo: https://github.com/ethangomez115-crypto/EthanGPT
 Builds:
-  - versionName: 15.8
-    versionCode: 41
+  - versionName: 15.9
+    versionCode: 44
     commit: master
     subdir: android
     # Built with the no-Gradle toolchain at .claude/skills/android-app/build-apk.sh

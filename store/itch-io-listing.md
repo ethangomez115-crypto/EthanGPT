@@ -33,16 +33,16 @@ FEATURES
 - Skills menu with slash commands (/review, /explain, /fix, /test, /refactor, /docs, /summarize, /brainstorm)
 - Plus button attaches any file to the chat so you can ask about it
 - Half-width swipe-out drawer that keeps the chat visible beside it
-- Hidden provider / key settings: long-press the drawer title
+- Hidden key access: tap the drawer title five times quickly — a small key-only dialog opens, and your saved key is never shown
 - Works on low-RAM phones (auto-switches to online mode below 8 GB RAM)
 - Desktop app for Windows, Linux and macOS (Java 11+)
 
 DOWNLOADS
-- Android: Nexus-AI-v15.8.apk (Android 8.0+, install from unknown sources)
-- Desktop: Nexus-AI-Desktop-v15.8.zip (unzip, run java -jar nexus-ai.jar)
+- Android: Nexus-AI-v15.9.apk (Android 8.0+, install from unknown sources)
+- Desktop: Nexus-AI-Desktop-v15.9.zip (unzip, run java -jar nexus-ai.jar; unchanged from v15.8)
 
 VERIFY
-APK SHA-256: 80c1830975fb8798d754785a5c24f0e19edfb6e10a8ce4397bceddc1a7061042
+APK SHA-256: 732362dcae0e089f9a56433e8dae8a9b50c7bf21c26c1bf42fb603b155ff7140
 Desktop ZIP SHA-256: 1b23365651b54d07862b4c2eb347d4e4cbade4b80f87100fc2dbe3b7f911f807
 
 Source: https://github.com/ethangomez115-crypto/EthanGPT
