@@ -13,6 +13,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -31,6 +32,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.OpenableColumns;
 import android.speech.RecognitionListener;
 import android.speech.RecognitionService;
 import android.speech.RecognizerIntent;
@@ -78,9 +80,9 @@ import java.net.URL;
 import java.net.URLEncoder;
 
 /**
- * Nexus AI v12.4 — Kimi-style interface: dark canvas, circular icon buttons,
- * a model pill, a blue orb welcome, horizontal chips, a rounded input bar and
- * a swipe-out drawer.
+ * Nexus AI — Claude Code-inspired interface: warm dark canvas, terracotta
+ * accents, a model pill, a warm orb welcome, slash-command skills in the
+ * swipe-out drawer, and a rounded prompt bar.
  *
  * AUTO (the only mode): before every message the app checks for a validated
  * internet connection. When online it uses a free model (key built into the
@@ -104,18 +106,21 @@ public class MainActivity extends Activity {
     private static final String PREF_ACTIVE_CHAT = "active_chat";
 
     private static final int REQ_RECORD_AUDIO = 1;
+    private static final int REQ_PICK_FILE = 2;
 
-    // Kimi-like palette.
-    // Google AI Studio-inspired dark palette with Kimi-style gradient accents.
-    private static final int C_BG = 0xFF1B1B1F;
-    private static final int C_SURFACE = 0xFF2A2A31;
-    private static final int C_SURFACE_2 = 0xFF34343C;
-    private static final int C_DRAWER = 0xFF202024;
-    private static final int C_TEXT = 0xFFF5F5F7;
-    private static final int C_TEXT_DIM = 0xFF9AA0AA;
-    private static final int C_ACCENT = 0xFF8AB4F8;   // AI Studio blue
-    private static final int C_GRAD_A = 0xFF7C6BFF;   // Kimi violet
-    private static final int C_GRAD_B = 0xFF4F8DF7;   // Kimi blue
+    // Claude Code-inspired warm palette with a terracotta accent.
+    private static final int C_BG = 0xFF1F1E1D;
+    private static final int C_SURFACE = 0xFF2B2A27;
+    private static final int C_SURFACE_2 = 0xFF373532;
+    private static final int C_DRAWER = 0xFF242320;
+    private static final int C_TEXT = 0xFFF5F4EF;
+    private static final int C_TEXT_DIM = 0xFFA8A29A;
+    private static final int C_ACCENT = 0xFFD97757;   // Claude terracotta
+    private static final int C_GRAD_A = 0xFFE08A63;
+    private static final int C_GRAD_B = 0xFFC15F3C;
+    private static final int C_PILL_A = 0xFF332F2A;   // warm secondary pills
+    private static final int C_PILL_B = 0xFF292622;
+    private static final int C_PILL_STROKE = 0xFF4A443C;
 
     // --- chat screen ---
     private SwipeScrollView chatScroll;
@@ -154,10 +159,9 @@ public class MainActivity extends Activity {
     private boolean drawerOpen = false;
     private int drawerWidth = 0;
 
-    // --- tab navigation (shared by chips, Code IDE and swipe gestures) ---
+    // --- swipe navigation between workspaces (no visible tab bar) ---
     private View[] tabPages;
-    private TextView[] tabLabels;
-    private IconView[] tabIcons;
+    private int currentTab = 0;
 
     // --- voice agent ---
     private TextToSpeech tts;
@@ -234,8 +238,8 @@ public class MainActivity extends Activity {
         statusText.setTextSize(13);
         statusText.setTextColor(C_TEXT);
         statusText.setPadding(dp(16), dp(9), dp(16), dp(9));
-        GradientDrawable statusBg = gradientPill(0xFF2E2A45, 0xFF232B45, 22);
-        statusBg.setStroke(dp(1), 0xFF41415A);
+        GradientDrawable statusBg = gradientPill(C_PILL_A, C_PILL_B,22);
+        statusBg.setStroke(dp(1), C_PILL_STROKE);
         statusText.setBackground(statusBg);
         statusText.setSingleLine(true);
         LinearLayout.LayoutParams pl = new LinearLayout.LayoutParams(
@@ -265,7 +269,7 @@ public class MainActivity extends Activity {
         voiceBar = new LinearLayout(this);
         voiceBar.setOrientation(LinearLayout.HORIZONTAL);
         voiceBar.setGravity(Gravity.CENTER_VERTICAL);
-        voiceBar.setBackground(rounded(0xFF263A34, 14));
+        voiceBar.setBackground(rounded(0xFF3A2E26, 14));
         voiceBar.setPadding(dp(14), dp(8), dp(8), dp(8));
         voiceBar.setVisibility(View.GONE);
         LinearLayout.LayoutParams vblp = new LinearLayout.LayoutParams(
@@ -276,7 +280,7 @@ public class MainActivity extends Activity {
         voiceStatusText = new TextView(this);
         voiceStatusText.setText("Voice agent");
         voiceStatusText.setTextSize(12);
-        voiceStatusText.setTextColor(0xFF7EE0C0);
+        voiceStatusText.setTextColor(0xFFE8A878);
         voiceStatusText.setLayoutParams(new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         voiceBar.addView(voiceStatusText);
@@ -344,19 +348,19 @@ public class MainActivity extends Activity {
         inputPill.setOrientation(LinearLayout.HORIZONTAL);
         inputPill.setGravity(Gravity.CENTER_VERTICAL);
         inputPill.setPadding(dp(6), dp(6), dp(6), dp(6));
-        GradientDrawable inputBg = rounded(0xFF26262D, 30);
-        inputBg.setStroke(dp(1), 0xFF3A3A46);
+        GradientDrawable inputBg = rounded(0xFF292622, 30);
+        inputBg.setStroke(dp(1), C_PILL_STROKE);
         inputPill.setBackground(inputBg);
 
         FrameLayout plus = iconButton(IconView.PLUS, 40, C_SURFACE_2, C_ACCENT);
         plus.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { newChat(); }
+            @Override public void onClick(View v) { pickFile(); }
         });
         inputPill.addView(plus);
 
         input = new EditText(this);
         input.setHint("Ask Nexus anything…");
-        input.setHintTextColor(0xFF8A8A8A);
+        input.setHintTextColor(C_TEXT_DIM);
         input.setTextColor(C_TEXT);
         input.setTextSize(15);
         input.setSingleLine(true);
@@ -429,44 +433,10 @@ public class MainActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
         tabPages = new View[] { mainView, terminalPane, codePane, browserPane };
-        tabLabels = new TextView[4];
-        tabIcons = new IconView[4];
-        final String[] tabNames = new String[] { "Chat", "Terminal", "Code", "Web" };
-        LinearLayout tabBar = new LinearLayout(this);
-        tabBar.setOrientation(LinearLayout.HORIZONTAL);
-        tabBar.setBackgroundColor(0xFF16161A);
-        tabBar.setPadding(0, dp(6), 0, Math.max(bottomInset, dp(8)));
-        for (int i = 0; i < tabNames.length; i++) {
-            final int idx = i;
-            LinearLayout tab = new LinearLayout(this);
-            tab.setOrientation(LinearLayout.VERTICAL);
-            tab.setGravity(Gravity.CENTER);
-            tab.setPadding(0, dp(4), 0, dp(2));
-            tab.setLayoutParams(new LinearLayout.LayoutParams(0,
-                    ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-            IconView ti = new IconView(this, new int[] {
-                    IconView.CHAT, IconView.TERMINAL, IconView.CODE, IconView.WEB}[i]);
-            ti.setColor(0xFF9A9A9A);
-            ti.setLayoutParams(new LinearLayout.LayoutParams(dp(20), dp(20)));
-            tabIcons[i] = ti;
-            tab.addView(ti);
-            TextView tl = new TextView(this);
-            tl.setText(tabNames[i]);
-            tl.setTextSize(11);
-            tl.setTextColor(0xFF9A9A9A);
-            tl.setPadding(0, dp(2), 0, 0);
-            tab.addView(tl);
-            tabLabels[i] = tl;
-            tab.setClickable(true);
-            tab.setOnClickListener(new View.OnClickListener() {
-                @Override public void onClick(View v) { selectTab(idx); }
-            });
-            tab.setTag(Integer.valueOf(i));
-            tabBar.addView(tab);
-        }
-        tabHost.addView(tabBar, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        // Initial active tab: Chat
+        // No bottom tab bar — swipe gestures move between workspaces. Reserve
+        // the system nav-bar inset inside the page area so nothing is hidden.
+        pageArea.setPadding(0, 0, 0, bottomInset);
+        // Initial workspace: Chat
         selectTab(0);
 
         // --- Container: tab host + scrim + drawer ---
@@ -512,10 +482,22 @@ public class MainActivity extends Activity {
         if (tabPages == null || idx < 0 || idx >= tabPages.length) return;
         for (int k = 0; k < tabPages.length; k++) {
             tabPages[k].setVisibility(k == idx ? View.VISIBLE : View.GONE);
-            int c = (k == idx) ? C_ACCENT : 0xFF9A9A9A;
-            tabLabels[k].setTextColor(c);
-            tabIcons[k].setColor(c);
         }
+        currentTab = idx;
+    }
+
+    private static final String[] WORKSPACE_NAMES = { "Chat", "Terminal", "Code IDE", "Web" };
+
+    /** Cycle to the next workspace with a left swipe from the right edge. */
+    private void nextWorkspace() {
+        selectTab((currentTab + 1) % tabPages.length);
+        Toast.makeText(this, WORKSPACE_NAMES[currentTab], Toast.LENGTH_SHORT).show();
+    }
+
+    /** Cycle to the previous workspace with a right swipe from the right edge. */
+    private void prevWorkspace() {
+        selectTab((currentTab + tabPages.length - 1) % tabPages.length);
+        Toast.makeText(this, WORKSPACE_NAMES[currentTab], Toast.LENGTH_SHORT).show();
     }
 
     // --------------------------- helpers / style ---------------------------- //
@@ -530,7 +512,7 @@ public class MainActivity extends Activity {
         return g;
     }
 
-    /** Kimi-style gradient pill used for primary buttons and accents. */
+    /** Warm gradient pill used for primary buttons and accents. */
     private GradientDrawable gradientPill(int a, int b, int radiusDp) {
         GradientDrawable g = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
                 new int[] { a, b });
@@ -570,7 +552,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** A circular, flat icon button (Kimi style). */
+    /** A circular, flat icon button. */
     private FrameLayout iconButton(int type, int sizeDp, int bgColor, int iconColor) {
         FrameLayout f = new FrameLayout(this);
         GradientDrawable bg = new GradientDrawable();
@@ -593,8 +575,8 @@ public class MainActivity extends Activity {
         chip.setOrientation(LinearLayout.HORIZONTAL);
         chip.setGravity(Gravity.CENTER_VERTICAL);
         chip.setPadding(dp(14), dp(9), dp(16), dp(9));
-        GradientDrawable chipBg = gradientPill(0xFF2E2A45, 0xFF232B45, 22);
-        chipBg.setStroke(dp(1), 0xFF41415A);
+        GradientDrawable chipBg = gradientPill(C_PILL_A, C_PILL_B,22);
+        chipBg.setStroke(dp(1), C_PILL_STROKE);
         chip.setBackground(chipBg);
         IconView ic = new IconView(this, iconType);
         ic.setColor(C_ACCENT);
@@ -626,7 +608,8 @@ public class MainActivity extends Activity {
         interface SwipeListener {
             void onOpen();
             void onClose();
-            void onOpenCode();
+            void onNext();
+            void onPrev();
         }
         private SwipeListener listener;
         private float x0, y0;
@@ -652,12 +635,13 @@ public class MainActivity extends Activity {
                             done = true;
                             if (listener != null) {
                                 float edge = 140f;
-                                // Swipe right from the left edge opens the menu.
+                                // Right from the left edge opens the menu.
                                 if (dx > 0 && x0 < edge) listener.onOpen();
-                                // Swipe left from the right edge opens the Code IDE.
-                                else if (dx < 0 && x0 > getWidth() - edge) listener.onOpenCode();
-                                // Any other left swipe closes the drawer (self-guarded),
-                                // exactly like the chat screen.
+                                // Left from the right edge: next workspace.
+                                else if (dx < 0 && x0 > getWidth() - edge) listener.onNext();
+                                // Any other right swipe: previous workspace.
+                                else if (dx > 0) listener.onPrev();
+                                // Any other left swipe closes the drawer (self-guarded).
                                 else if (dx < 0) listener.onClose();
                             }
                         }
@@ -672,11 +656,12 @@ public class MainActivity extends Activity {
         private float dpPx() { return getResources().getDisplayMetrics().density; }
     }
 
-    /** Bridges the swipe container to this activity's drawer and Code IDE tab. */
+    /** Bridges the swipe container to the drawer and workspace navigation. */
     private final class DrawerSwipe implements SwipeContainer.SwipeListener {
         @Override public void onOpen() { openDrawer(); }
         @Override public void onClose() { closeDrawer(); }
-        @Override public void onOpenCode() { closeDrawer(); selectTab(2); }
+        @Override public void onNext() { closeDrawer(); nextWorkspace(); }
+        @Override public void onPrev() { closeDrawer(); prevWorkspace(); }
     }
 
     /** A ScrollView that lets a horizontal swipe open/close the history drawer. */
@@ -729,7 +714,7 @@ public class MainActivity extends Activity {
                 STOP = 12, PERSON = 13, TERMINAL = 14, CODE = 15, WEB = 16;
 
         private int type;
-        private int color = 0xFFE8E8E8;
+        private int color = 0xFFF5F4EF;
         private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
 
         public IconView(Context c, int type) {
@@ -912,7 +897,7 @@ public class MainActivity extends Activity {
 
         public OrbView(Context c) {
             super(c);
-            eye.setColor(0xFFFFFFFF);
+            eye.setColor(C_TEXT);
         }
 
         public void setMood(int m) { mood = m; invalidate(); }
@@ -941,20 +926,20 @@ public class MainActivity extends Activity {
             int glowColor;
             switch (mood) {
                 case MOOD_SPEAK:
-                    colors = new int[]{0xFFB9FFE6, 0xFF2BD9A8, 0xFF0E8F6E};
-                    glowColor = 0xFF2BD9A8;
+                    colors = new int[]{0xFFFFD9C2, 0xFFE89A6A, 0xFFB85C35};
+                    glowColor = 0xFFE89A6A;
                     break;
                 case MOOD_THINK:
-                    colors = new int[]{0xFFC9DEFF, 0xFF6FA8FF, 0xFF2A5FC0};
-                    glowColor = 0xFF6FA8FF;
+                    colors = new int[]{0xFFF4C9A8, 0xFFD97757, 0xFF9C4B2C};
+                    glowColor = 0xFFD97757;
                     break;
                 case MOOD_LISTEN:
-                    colors = new int[]{0xFFBFE6FF, 0xFF4FAFFF, 0xFF1E6FE0};
-                    glowColor = 0xFF4FAFFF;
+                    colors = new int[]{0xFFFFE0C4, 0xFFECA070, 0xFFC15F3C};
+                    glowColor = 0xFFECA070;
                     break;
                 default:
-                    colors = new int[]{0xFF9AD4FF, 0xFF3B9CFF, 0xFF1B5FC8};
-                    glowColor = 0xFF3B9CFF;
+                    colors = new int[]{0xFFF3CCB0, 0xFFD97757, 0xFFA84E2E};
+                    glowColor = 0xFFD97757;
                     break;
             }
 
@@ -1570,6 +1555,91 @@ public class MainActivity extends Activity {
         }
     }
 
+    // --------------------------- attach files -------------------------------- //
+    /** + button: attach any file from the device to the current chat. */
+    private void pickFile() {
+        try {
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("*/*");
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+            startActivityForResult(intent, REQ_PICK_FILE);
+        } catch (Exception e) {
+            Toast.makeText(this, "No file picker available", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQ_PICK_FILE || resultCode != RESULT_OK || data == null) return;
+        Uri uri = data.getData();
+        if (uri == null) return;
+        try {
+            getContentResolver().takePersistableUriPermission(
+                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        } catch (Exception ignored) { }
+
+        String name = displayName(uri);
+        byte[] bytes = readUri(uri);
+        if (bytes == null) {
+            Toast.makeText(this, "Could not read that file", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        boolean binary = false;
+        int check = Math.min(bytes.length, 4096);
+        for (int i = 0; i < check; i++) {
+            if (bytes[i] == 0) { binary = true; break; }
+        }
+        String body;
+        if (binary) {
+            body = "(binary file, " + bytes.length + " bytes)";
+        } else {
+            int limit = Math.min(bytes.length, 20000);
+            body = new String(bytes, 0, limit, java.nio.charset.StandardCharsets.UTF_8);
+            if (bytes.length > limit) body += "\n… (truncated)";
+        }
+        removeWelcome();
+        addUserMessage("Attached file: " + name + "\n\n" + body);
+        input.setText("Here is the attached file '" + name + "'. ");
+        input.requestFocus();
+        Toast.makeText(this, "File added to chat", Toast.LENGTH_SHORT).show();
+    }
+
+    private String displayName(Uri uri) {
+        Cursor c = getContentResolver().query(uri, null, null, null, null);
+        try {
+            if (c != null && c.moveToFirst()) {
+                int i = c.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                if (i >= 0) {
+                    String n = c.getString(i);
+                    if (n != null && !n.isEmpty()) return n;
+                }
+            }
+        } catch (Exception ignored) { } finally {
+            if (c != null) c.close();
+        }
+        String last = uri.getLastPathSegment();
+        return last != null ? last : "file";
+    }
+
+    private byte[] readUri(Uri uri) {
+        InputStream in = null;
+        try {
+            in = getContentResolver().openInputStream(uri);
+            if (in == null) return null;
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            return out.toByteArray();
+        } catch (Exception e) {
+            return null;
+        } finally {
+            if (in != null) try { in.close(); } catch (Exception ignored) { }
+        }
+    }
+
     // --------------------------- action button ------------------------------ //
     private void buildActionButton() {
         actionButton = new FrameLayout(this);
@@ -1580,7 +1650,7 @@ public class MainActivity extends Activity {
         int size = dp(44);
         actionButton.setLayoutParams(new LinearLayout.LayoutParams(size, size));
         actionIcon = new IconView(this, IconView.MIC);
-        actionIcon.setColor(0xFFFFFFFF);
+        actionIcon.setColor(C_TEXT);
         int is = dp(22);
         actionButton.addView(actionIcon, new FrameLayout.LayoutParams(is, is, Gravity.CENTER));
         actionButton.setClickable(true);
@@ -1604,7 +1674,7 @@ public class MainActivity extends Activity {
     private void updateActionButton() {
         if (actionIcon == null) return;
         if (voiceMode) {
-            actionBg.setColors(new int[] { 0xFFF06A6A, 0xFFC0446A });
+            actionBg.setColors(new int[] { 0xFFE86A5A, 0xFFC0446A });
             actionIcon.setType(IconView.STOP);
         } else if (input != null && !input.getText().toString().trim().isEmpty()) {
             actionBg.setColors(new int[] { C_GRAD_A, C_GRAD_B });
@@ -1616,10 +1686,10 @@ public class MainActivity extends Activity {
     }
 
     // --------------------------- voice overlay ------------------------------ //
-    /** Full-screen Kimi-style voice mode: a pulsing orb that listens and speaks. */
+    /** Full-screen voice mode: a pulsing orb that listens and speaks. */
     private FrameLayout buildVoiceOverlay() {
         FrameLayout overlay = new FrameLayout(this);
-        overlay.setBackgroundColor(0xF2181818);
+        overlay.setBackgroundColor(0xF21F1E1D);
         overlay.setClickable(true);
 
         LinearLayout col = new LinearLayout(this);
@@ -1653,9 +1723,9 @@ public class MainActivity extends Activity {
         TextView end = new TextView(this);
         end.setText("End voice chat");
         end.setTextSize(14);
-        end.setTextColor(0xFF1A1A1A);
+        end.setTextColor(0xFF1F1E1D);
         end.setPadding(dp(26), dp(10), dp(26), dp(10));
-        end.setBackground(rounded(0xFFEDEDED, 24));
+        end.setBackground(rounded(0xFFF5F4EF, 24));
         LinearLayout.LayoutParams el = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         el.topMargin = dp(36);
@@ -1952,7 +2022,7 @@ public class MainActivity extends Activity {
         subl.topMargin = dp(6);
         col.addView(sub, subl);
 
-        // AI Studio-style suggestion cards, tappable to prefill the prompt box.
+        // Suggestion cards, tappable to prefill the prompt box.
         LinearLayout grid = new LinearLayout(this);
         grid.setOrientation(LinearLayout.VERTICAL);
         LinearLayout.LayoutParams gl = new LinearLayout.LayoutParams(
@@ -1974,6 +2044,23 @@ public class MainActivity extends Activity {
         grid.addView(r2);
         col.addView(grid);
 
+        // Claude Code-style slash-command hint; opens the Skills menu.
+        TextView skillsHint = new TextView(this);
+        skillsHint.setText("Skills: /review  /fix  /test  /docs     Browse all →");
+        skillsHint.setTextSize(12);
+        skillsHint.setTextColor(C_ACCENT);
+        skillsHint.setPadding(dp(12), dp(8), dp(12), dp(8));
+        skillsHint.setBackground(rounded(C_SURFACE, 18));
+        LinearLayout.LayoutParams shl = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        shl.topMargin = dp(12);
+        skillsHint.setLayoutParams(shl);
+        skillsHint.setClickable(true);
+        skillsHint.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { openDrawer(); }
+        });
+        col.addView(skillsHint);
+
         holder.addView(col, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
                 Gravity.CENTER));
@@ -1981,14 +2068,14 @@ public class MainActivity extends Activity {
         welcomeView = holder;
     }
 
-    /** One AI Studio-style suggestion card; tapping it fills the prompt box. */
+    /** One suggestion card; tapping it fills the prompt box. */
     private View suggestion(int iconType, String label, final String prompt) {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.HORIZONTAL);
         card.setGravity(Gravity.CENTER_VERTICAL);
         card.setPadding(dp(11), dp(10), dp(8), dp(10));
-        GradientDrawable bg = gradientPill(0xFF2E2A45, 0xFF232B45, 16);
-        bg.setStroke(dp(1), 0xFF41415A);
+        GradientDrawable bg = gradientPill(C_PILL_A, C_PILL_B,16);
+        bg.setStroke(dp(1), C_PILL_STROKE);
         card.setBackground(bg);
         IconView ic = new IconView(this, iconType);
         ic.setColor(C_ACCENT);
@@ -2061,11 +2148,11 @@ public class MainActivity extends Activity {
         FrameLayout avatar = new FrameLayout(this);
         GradientDrawable ab = new GradientDrawable();
         ab.setShape(GradientDrawable.OVAL);
-        ab.setColor(0xFF3A3A3A);
+        ab.setColor(0xFF4A443C);
         avatar.setBackground(ab);
         avatar.setLayoutParams(new LinearLayout.LayoutParams(dp(44), dp(44)));
         IconView person = new IconView(this, IconView.PERSON);
-        person.setColor(0xFFBDBDBD);
+        person.setColor(C_ACCENT);
         avatar.addView(person, new FrameLayout.LayoutParams(dp(26), dp(26), Gravity.CENTER));
         top.addView(avatar);
 
@@ -2078,7 +2165,7 @@ public class MainActivity extends Activity {
         TextView name = new TextView(this);
         name.setText("Nexus AI");
         name.setTextSize(16);
-        name.setTextColor(0xFFFFFFFF);
+        name.setTextColor(C_TEXT);
         titles.addView(name);
         TextView sub = new TextView(this);
         sub.setText("Built-in · AUTO");
@@ -2089,49 +2176,81 @@ public class MainActivity extends Activity {
 
         d.addView(top);
 
-        d.addView(menuRow(IconView.SPARKLE, "Code ideas", new View.OnClickListener() {
+        // One scrollable menu so the Skills list fits on small screens too.
+        ScrollView menuScroll = new ScrollView(this);
+        LinearLayout menu = new LinearLayout(this);
+        menu.setOrientation(LinearLayout.VERTICAL);
+        menuScroll.addView(menu);
+        menuScroll.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        d.addView(menuScroll);
+
+        menu.addView(menuRow(IconView.SPARKLE, "Code ideas", new View.OnClickListener() {
             @Override public void onClick(View v) { closeDrawer(); sendCodeIdeas(); }
         }));
-        d.addView(menuRow(IconView.MIC, "Voice agent", new View.OnClickListener() {
+        menu.addView(menuRow(IconView.MIC, "Voice agent", new View.OnClickListener() {
             @Override public void onClick(View v) { closeDrawer(); toggleVoiceMode(); }
         }));
 
-        d.addView(sectionLabel("Chat"));
-        d.addView(menuRow(IconView.PLUS, "New chat", new View.OnClickListener() {
+        menu.addView(sectionLabel("Chat"));
+        menu.addView(menuRow(IconView.PLUS, "New chat", new View.OnClickListener() {
             @Override public void onClick(View v) { newChat(); }
         }));
 
-        d.addView(sectionLabel("AI settings"));
-        d.addView(menuRow(IconView.GEAR, "Online settings", new View.OnClickListener() {
+        // Claude Code-style slash-command skills. Each one pre-fills a real
+        // prompt in the chat box — the user can edit it before sending.
+        menu.addView(sectionLabel("Skills"));
+        menu.addView(skillRow("/review", "Find bugs and improvements", IconView.CODE,
+                "Review the following code for bugs, security issues and style problems. "
+                        + "For each issue, explain why it matters and show the fix:\n\n"));
+        menu.addView(skillRow("/explain", "Explain code step by step", IconView.CODE,
+                "Explain the following code in plain language, step by step, including "
+                        + "the purpose of each function:\n\n"));
+        menu.addView(skillRow("/fix", "Find and fix a bug", IconView.CODE,
+                "Find the bug in the following code, explain the root cause and provide "
+                        + "a corrected version:\n\n"));
+        menu.addView(skillRow("/test", "Write unit tests", IconView.CODE,
+                "Write a complete set of unit tests for the following code, covering "
+                        + "normal cases and edge cases:\n\n"));
+        menu.addView(skillRow("/refactor", "Clean up and optimise", IconView.CODE,
+                "Refactor the following code to be cleaner and more efficient. Keep the "
+                        + "behaviour identical and explain your changes:\n\n"));
+        menu.addView(skillRow("/docs", "Write documentation", IconView.CODE,
+                "Write clear documentation for the following code: what it does, how to "
+                        + "use it, and a short example:\n\n"));
+        menu.addView(skillRow("/summarize", "Condense long text", IconView.CHAT,
+                "Summarize the following text concisely, keeping all the key points:\n\n"));
+        menu.addView(skillRow("/brainstorm", "Generate creative ideas", IconView.SPARKLE,
+                "Brainstorm creative ideas for the following topic. Give me at least 8 "
+                        + "varied suggestions, each with a one-line description:\n\n"));
+
+        menu.addView(sectionLabel("AI settings"));
+        menu.addView(menuRow(IconView.GEAR, "Online settings", new View.OnClickListener() {
             @Override public void onClick(View v) { closeDrawer(); showOnlineSettings(); }
         }));
 
-        d.addView(sectionLabel("Backup & share"));
-        d.addView(menuRow(IconView.SPARKLE, "Backup chats to file", new View.OnClickListener() {
+        menu.addView(sectionLabel("Backup & share"));
+        menu.addView(menuRow(IconView.SPARKLE, "Backup chats to file", new View.OnClickListener() {
             @Override public void onClick(View v) { closeDrawer(); backupChatsNow(); }
         }));
-        d.addView(menuRow(IconView.CHAT, "Restore chats from file", new View.OnClickListener() {
+        menu.addView(menuRow(IconView.CHAT, "Restore chats from file", new View.OnClickListener() {
             @Override public void onClick(View v) { closeDrawer(); restoreChatsNow(); }
         }));
-        d.addView(menuRow(IconView.SEND, "Share chats", new View.OnClickListener() {
+        menu.addView(menuRow(IconView.SEND, "Share chats", new View.OnClickListener() {
             @Override public void onClick(View v) { closeDrawer(); shareChatsNow(); }
         }));
 
-        d.addView(sectionLabel("Chat history"));
+        menu.addView(sectionLabel("Chat history"));
 
         drawerList = new LinearLayout(this);
         drawerList.setOrientation(LinearLayout.VERTICAL);
         drawerList.setPadding(dp(8), 0, dp(8), 0);
-        ScrollView listScroll = new ScrollView(this);
-        listScroll.addView(drawerList);
-        listScroll.setLayoutParams(new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
-        d.addView(listScroll);
+        menu.addView(drawerList);
 
         TextView note = new TextView(this);
         note.setText("Saved on this device · backup: " + ChatBackup.location());
         note.setTextSize(12);
-        note.setTextColor(0xFF8A8A8A);
+        note.setTextColor(C_TEXT_DIM);
         note.setGravity(Gravity.CENTER);
         note.setPadding(dp(16), dp(8), dp(16), dp(10));
         d.addView(note);
@@ -2139,9 +2258,9 @@ public class MainActivity extends Activity {
         TextView newPill = new TextView(this);
         newPill.setText("New chat");
         newPill.setTextSize(14);
-        newPill.setTextColor(0xFF1A1A1A);
+        newPill.setTextColor(0xFF1F1E1D);
         newPill.setPadding(dp(30), dp(10), dp(30), dp(10));
-        newPill.setBackground(rounded(0xFFEDEDED, 24));
+        newPill.setBackground(rounded(0xFFF5F4EF, 24));
         LinearLayout.LayoutParams nl = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         nl.gravity = Gravity.CENTER_HORIZONTAL;
@@ -2161,12 +2280,12 @@ public class MainActivity extends Activity {
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setPadding(dp(20), dp(13), dp(20), dp(13));
         IconView ic = new IconView(this, iconType);
-        ic.setColor(0xFFD6D6D6);
+        ic.setColor(C_TEXT_DIM);
         row.addView(ic, new LinearLayout.LayoutParams(dp(22), dp(22)));
         TextView tv = new TextView(this);
         tv.setText(label);
         tv.setTextSize(16);
-        tv.setTextColor(0xFFEDEDED);
+        tv.setTextColor(C_TEXT);
         LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         tl.leftMargin = dp(14);
@@ -2176,11 +2295,60 @@ public class MainActivity extends Activity {
         return row;
     }
 
+    /** Claude Code-style skill: a slash command, a short hint, and a real prompt. */
+    private View skillRow(final String command, String description, int iconType,
+                          final String prompt) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dp(20), dp(9), dp(20), dp(9));
+
+        IconView ic = new IconView(this, iconType);
+        ic.setColor(C_ACCENT);
+        row.addView(ic, new LinearLayout.LayoutParams(dp(20), dp(20)));
+
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        bp.leftMargin = dp(12);
+        box.setLayoutParams(bp);
+
+        TextView cmd = new TextView(this);
+        cmd.setText(command);
+        cmd.setTextSize(14);
+        cmd.setTextColor(C_ACCENT);
+        box.addView(cmd);
+
+        TextView desc = new TextView(this);
+        desc.setText(description);
+        desc.setTextSize(11);
+        desc.setTextColor(C_TEXT_DIM);
+        box.addView(desc);
+        row.addView(box);
+
+        row.setClickable(true);
+        row.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { applySkill(prompt); }
+        });
+        return row;
+    }
+
+    /** Load a skill's prompt into the chat box so the user can edit before sending. */
+    private void applySkill(String prompt) {
+        closeDrawer();
+        selectTab(0);
+        input.setText(prompt);
+        input.setSelection(prompt.length());
+        input.requestFocus();
+        Toast.makeText(this, "Skill loaded into chat", Toast.LENGTH_SHORT).show();
+    }
+
     private TextView sectionLabel(String text) {
         TextView tv = new TextView(this);
         tv.setText(text);
         tv.setTextSize(13);
-        tv.setTextColor(0xFF8A8A8A);
+        tv.setTextColor(C_TEXT_DIM);
         tv.setPadding(dp(20), dp(14), dp(20), dp(6));
         return tv;
     }
@@ -2195,7 +2363,7 @@ public class MainActivity extends Activity {
             int pad = dp(10);
             row.setPadding(pad, pad, pad, pad);
             boolean active = c.id.equals(activeChatId);
-            row.setBackground(rounded(active ? 0xFF2C2C2C : C_DRAWER, 12));
+            row.setBackground(rounded(active ? C_SURFACE : C_DRAWER, 12));
             LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             rp.setMargins(0, 0, 0, dp(2));
@@ -2211,18 +2379,18 @@ public class MainActivity extends Activity {
             name.setTextSize(14);
             name.setSingleLine(true);
             name.setEllipsize(android.text.TextUtils.TruncateAt.END);
-            name.setTextColor(active ? 0xFFFFFFFF : 0xFFE0E0E0);
+            name.setTextColor(active ? C_TEXT : 0xFFD8D3CB);
             textBox.addView(name);
 
             TextView when = new TextView(this);
             when.setText(DateUtils.getRelativeTimeSpanString(
                     c.updated, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS));
             when.setTextSize(11);
-            when.setTextColor(0xFF8A8A8A);
+            when.setTextColor(C_TEXT_DIM);
             textBox.addView(when);
             row.addView(textBox);
 
-            FrameLayout del = iconButton(IconView.TRASH, 32, C_DRAWER, 0xFF8A8A8A);
+            FrameLayout del = iconButton(IconView.TRASH, 32, C_DRAWER, C_TEXT_DIM);
             del.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) { confirmDelete(c); }
             });
@@ -2369,7 +2537,7 @@ public class MainActivity extends Activity {
                 bubble.setTextColor(C_TEXT);
                 bubble.setPadding(dp(16), dp(10), dp(16), dp(10));
                 bubble.setMaxWidth((int) (getResources().getDisplayMetrics().widthPixels * 0.8));
-                bubble.setBackground(gradientPill(0xFF3A3355, 0xFF2C3A55, 20));
+                bubble.setBackground(gradientPill(0xFF4A3A2E, 0xFF3A2E28, 20));
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                 lp.gravity = Gravity.END;
@@ -2401,7 +2569,7 @@ public class MainActivity extends Activity {
                 TextView body = new TextView(MainActivity.this);
                 body.setText(text);
                 body.setTextSize(15);
-                body.setTextColor(0xFFEDEDED);
+                body.setTextColor(C_TEXT);
                 body.setLineSpacing(dp(3), 1.12f);
                 body.setTextIsSelectable(true);
                 wrap.addView(body);
@@ -2586,8 +2754,8 @@ public class MainActivity extends Activity {
         t.setTextSize(11);
         t.setTextColor(C_ACCENT);
         t.setPadding(dp(9), dp(5), dp(9), dp(5));
-        GradientDrawable actionBgLocal = gradientPill(0xFF2E2A45, 0xFF232B45, 12);
-        actionBgLocal.setStroke(dp(1), 0xFF41415A);
+        GradientDrawable actionBgLocal = gradientPill(C_PILL_A, C_PILL_B,12);
+        actionBgLocal.setStroke(dp(1), C_PILL_STROKE);
         t.setBackground(actionBgLocal);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -2611,14 +2779,15 @@ public class MainActivity extends Activity {
             maybeRestartListening();
             return;
         }
-        final String text = input.getText().toString().trim();
-        if (text.isEmpty()) {
+        final String raw = input.getText().toString().trim();
+        if (raw.isEmpty()) {
             Toast.makeText(this, "Type something first", Toast.LENGTH_SHORT).show();
             maybeRestartListening();
             return;
         }
+        final String text = expandSkill(raw);
         input.setText("");
-        addUserMessage(text);
+        addUserMessage(raw);
         if (isInternetAvailable()) {
             sendOnline(text);
         } else if (offlineAllowed) {
@@ -2629,6 +2798,42 @@ public class MainActivity extends Activity {
             voiceSession = false;
             updateActionButton();
         }
+    }
+
+    /** Expand a typed Claude Code-style slash command into its full prompt. */
+    private String expandSkill(String text) {
+        if (!text.startsWith("/")) return text;
+        int split = text.indexOf(' ');
+        String cmd = split < 0 ? text : text.substring(0, split);
+        String rest = split < 0 ? "" : text.substring(split + 1).trim();
+        String prefix;
+        if (cmd.equals("/review")) {
+            prefix = "Review the following code for bugs, security issues and style "
+                    + "problems. For each issue, explain why it matters and show the fix:\n\n";
+        } else if (cmd.equals("/explain")) {
+            prefix = "Explain the following code in plain language, step by step, "
+                    + "including the purpose of each function:\n\n";
+        } else if (cmd.equals("/fix")) {
+            prefix = "Find the bug in the following code, explain the root cause and "
+                    + "provide a corrected version:\n\n";
+        } else if (cmd.equals("/test")) {
+            prefix = "Write a complete set of unit tests for the following code, covering "
+                    + "normal cases and edge cases:\n\n";
+        } else if (cmd.equals("/refactor")) {
+            prefix = "Refactor the following code to be cleaner and more efficient. Keep "
+                    + "the behaviour identical and explain your changes:\n\n";
+        } else if (cmd.equals("/docs")) {
+            prefix = "Write clear documentation for the following code: what it does, how "
+                    + "to use it, and a short example:\n\n";
+        } else if (cmd.equals("/summarize")) {
+            prefix = "Summarize the following text concisely, keeping all the key points:\n\n";
+        } else if (cmd.equals("/brainstorm")) {
+            prefix = "Brainstorm creative ideas for the following topic. Give me at least "
+                    + "8 varied suggestions, each with a one-line description:\n\n";
+        } else {
+            return text;
+        }
+        return prefix + rest;
     }
 
     private void sendCodeIdeas() {

@@ -28,11 +28,11 @@ import android.widget.Toast;
  */
 public final class LocalBrowserView {
 
-    private static final int BG = 0xFF1B1B1F;
-    private static final int SURFACE = 0xFF2A2A31;
-    private static final int TEXT = 0xFFF5F5F7;
-    private static final int DIM = 0xFF9AA0AA;
-    private static final int ACCENT = 0xFF8AB4F8;
+    private static final int BG = 0xFF1F1E1D;
+    private static final int SURFACE = 0xFF2B2A27;
+    private static final int TEXT = 0xFFF5F4EF;
+    private static final int DIM = 0xFFA8A29A;
+    private static final int ACCENT = 0xFFD97757;
     private static final String HOME_URL = "https://example.com";
 
     // Live references so other tabs (e.g. the Code IDE preview) can navigate here.

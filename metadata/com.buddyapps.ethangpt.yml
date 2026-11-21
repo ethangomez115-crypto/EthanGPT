@@ -17,22 +17,23 @@ Description: |
   - Keyless image generation from a text prompt; save, share or open images.
   - Local website preview served on 127.0.0.1 from the Code IDE.
   - Code IDE connected to chat ("Ask Nexus" and "Open in IDE").
-  - Swipe in from the right edge on any tab to open the Code IDE; left edge opens the menu.
-  - Clean code editor (view/edit code like Google AI Studio, with Copy / Preview / Ask Nexus).
-  - Google AI Studio-inspired dark UI and Kimi-style gradient pill buttons.
-  - Swipe sensitivity and behavior unified across all tabs to match the chat screen.
+  - Swipe-only navigation: left edge for the menu, right edge for the next workspace, right swipe for the previous one.
+  - Claude Code-inspired warm dark theme with cream text and terracotta accents.
+  - Skills menu with slash commands (/review, /fix, /test, /docs and more) that load real prompts into chat.
+  - Plus button attaches any file to the chat (text up to 20,000 characters, binary files by size).
+  - Clean code editor (view/edit code with Copy / Preview / Ask Nexus).
   - Chat backup to shared storage that survives uninstall/reinstall.
   - Share chats, files and images to any app (WhatsApp, Gmail, Drive...).
-  - Terminal and Code IDE tabs.
-  - Real WebView browser tab with "Open in browser" and "Share link".
+  - Terminal, Code IDE and Web workspaces (no bottom tabs).
+  - Real WebView browser with "Open in browser" and "Share link".
   - Works on low-RAM phones (under 8 GB RAM uses online mode automatically).
 
   No API keys are bundled. No telemetry, analytics or ads.
 RepoType: git
 Repo: https://github.com/ethangomez115-crypto/EthanGPT
 Builds:
-  - versionName: 15.5
-    versionCode: 35
+  - versionName: 15.6
+    versionCode: 36
     commit: master
     subdir: android
     # Built with the no-Gradle toolchain at .claude/skills/android-app/build-apk.sh

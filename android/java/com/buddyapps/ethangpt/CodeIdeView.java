@@ -56,13 +56,13 @@ public class CodeIdeView {
         if (sOpenRunnable != null) sOpenRunnable.run();
     }
 
-    private static final int BG = 0xFF1B1B1F;
-    private static final int SURFACE = 0xFF2A2A31;
-    private static final int EDITOR = 0xFF232329;
-    private static final int OUTPUT_BG = 0xFF1B1B1B;
-    private static final int TEXT = 0xFFF5F5F7;
-    private static final int DIM = 0xFF9AA0AA;
-    private static final int ACCENT = 0xFF8AB4F8;
+    private static final int BG = 0xFF1F1E1D;
+    private static final int SURFACE = 0xFF2B2A27;
+    private static final int EDITOR = 0xFF26251F;
+    private static final int OUTPUT_BG = 0xFF1A1917;
+    private static final int TEXT = 0xFFF5F4EF;
+    private static final int DIM = 0xFFA8A29A;
+    private static final int ACCENT = 0xFFD97757;
     private static final int KEYWORD = 0xFFC586C0;
     private static final int STRING = 0xFFCE9178;
     private static final int COMMENT = 0xFF6A9955;
@@ -690,9 +690,9 @@ public class CodeIdeView {
         b.setPadding(dp(ctx, 12), dp(ctx, 7), dp(ctx, 12), dp(ctx, 7));
         GradientDrawable gd;
         if (bg == ACCENT) {
-            // Kimi-style gradient pill for primary actions.
+            // Warm gradient pill for primary actions.
             gd = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
-                    new int[] { 0xFF7C6BFF, 0xFF4F8DF7 });
+                    new int[] { 0xFFE08A63, 0xFFC15F3C });
         } else {
             gd = new GradientDrawable();
             gd.setColor(bg);
