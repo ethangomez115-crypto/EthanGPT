@@ -2,16 +2,30 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.buddyapps.ethangpt">
 
-    <!-- No INTERNET permission: the model is built in and runs fully offline.
-         The Web button only hands a search to the phone's browser app. -->
+    <!-- INTERNET is used only for the online mode (key built into the APK).
+         The offline model never touches the network. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Needed so AUTO mode can detect internet availability and switch itself. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Voice agent: microphone for speech-to-text. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Chat backup file on older devices (Android 9 and below). Android 10+
+         uses MediaStore and needs no storage permission. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
 
     <application
-        android:label="EthanGPT"
+        android:label="Nexus AI"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:allowBackup="true"
-        android:theme="@android:style/Theme.DeviceDefault">
+        android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
 
         <activity
             android:name=".MainActivity"
+            android:windowSoftInputMode="adjustResize"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

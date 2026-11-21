@@ -1,0 +1,38 @@
+Categories:
+  - Development
+  - Writing
+License: MIT
+AuthorName: Ethan Gomez
+SourceCode: https://github.com/ethangomez115-crypto/EthanGPT
+IssueTracker: https://github.com/ethangomez115-crypto/EthanGPT/issues
+Changelog: https://github.com/ethangomez115-crypto/EthanGPT/releases
+Summary: On-device AI assistant with offline model, chat backup, image generation, code IDE and browser
+Description: |
+  Nexus AI is an original on-device AI assistant for Android 8.0+.
+
+  Features:
+  - Offline built-in N-gram language model — no internet or account needed.
+  - Optional online mode with your own free-tier key (Groq / OpenRouter / Gemini / DeepSeek).
+  - Interactive chat text: select, copy, save to file or share any reply.
+  - Keyless image generation from a text prompt; save, share or open images.
+  - Local website preview served on 127.0.0.1 from the Code IDE.
+  - Code IDE connected to chat ("Ask Nexus" and "Open in IDE").
+  - Swipe in from the right edge on any tab to open the Code IDE; left edge opens the menu.
+  - Clean code editor (view/edit code like Google AI Studio, with Copy / Preview / Ask Nexus).
+  - Chat backup to shared storage that survives uninstall/reinstall.
+  - Share chats, files and images to any app (WhatsApp, Gmail, Drive...).
+  - Terminal and Code IDE tabs.
+  - Real WebView browser tab with "Open in browser" and "Share link".
+  - Works on low-RAM phones (under 8 GB RAM uses online mode automatically).
+
+  No API keys are bundled. No telemetry, analytics or ads.
+RepoType: git
+Repo: https://github.com/ethangomez115-crypto/EthanGPT
+Builds:
+  - versionName: 15.3
+    versionCode: 33
+    commit: master
+    subdir: android
+    # Built with the no-Gradle toolchain at .claude/skills/android-app/build-apk.sh
+    # (javac -> d8 -> aapt2 -> apksigner). F-Droid will need a custom build recipe;
+    # see https://github.com/ethangomez115-crypto/EthanGPT for the source and APK.

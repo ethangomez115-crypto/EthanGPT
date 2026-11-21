@@ -57,6 +57,23 @@ public class NGramModel {
         return null;
     }
 
+    /**
+     * How many trailing tokens of this prompt were actually seen together in
+     * training (the longest matching context length). High means the model has
+     * real evidence; low means it would only be guessing from backoff.
+     */
+    public int promptMatchOrder(String prompt) {
+        List<Integer> context = new ArrayList<>();
+        for (int i = 0; i < order; i++) context.add(tokenizer.bosId());
+        for (int id : tokenizer.encode(prompt)) context.add(id);
+        int max = Math.min(context.size(), order);
+        for (int n = max; n >= 1; n--) {
+            String k = key(context, context.size() - n, context.size());
+            if (tables.get(n - 1).containsKey(k)) return n;
+        }
+        return 0;
+    }
+
     public String generate(String prompt, int maxNewTokens, double temperature,
                            int topK, double topP, Random rng) {
         List<Integer> context = new ArrayList<>();
