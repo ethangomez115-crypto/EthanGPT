@@ -1,19 +1,20 @@
-# Nexus AI v15.4 — Free Public Release
+# Nexus AI v15.5 — Free Public Release
 
 Nexus AI is an original, privacy-first AI assistant for Android 8.0+ and desktop
 (Windows / Linux / macOS via Java). Free to download and use, forever.
 
-## What's new in v15.4
-- **Google AI Studio–inspired interface** — dark, spacious layout with a centered
-  "What can I help with?" welcome, a 2×2 grid of tappable suggestion cards
-  (Create image, Write code, Explain topic, Summarize text), and a cleaner prompt bar.
-- **Kimi AI–style buttons** — violet→blue gradient pills for primary actions
-  (send, Save, Copy code, Ask Nexus) and tinted pills with subtle borders for
-  secondary ones; chat bubbles and quick chips updated to match.
-- Consistent new palette across Chat, Terminal, Code IDE and Web tabs.
+## What's new in v15.5
+- **Consistent swipe everywhere** — every tab (Chat, Terminal, Code IDE, Web) now
+  uses the same swipe sensitivity and behavior as the chat screen: a short swipe
+  is enough, with matching edge zones and direction thresholds.
+  - Swipe right from the left edge opens the history/menu drawer.
+  - Swipe left from the right edge opens the Code IDE.
+  - Any other left swipe closes the drawer.
 
-## Features carried over (v15.3)
-- Swipe in from the right edge on any tab to reveal the Code IDE (left edge opens menu).
+## Features carried over (v15.4)
+- Google AI Studio–inspired dark UI with a centered "What can I help with?"
+  welcome, tappable suggestion cards, and a cleaner prompt bar.
+- Kimi AI–style violet→blue gradient pill buttons across the app.
 - Clean, edit-only code editor with file list, syntax highlighting and Copy/Preview/Ask Nexus.
 - Interactive chat text: select, copy, save to file, share, open in IDE, preview HTML.
 - Keyless image generation (save/share/open) and file generation/sharing.
@@ -28,9 +29,9 @@ the provider you choose. Image generation uses a free public endpoint and needs
 an internet connection.
 
 ## Desktop app
-Unzip `Nexus-AI-Desktop-v15.4.zip`, then run `java -jar nexus-ai.jar`
+Unzip `Nexus-AI-Desktop-v15.5.zip`, then run `java -jar nexus-ai.jar`
 (or `nexus-ai.sh` on Linux/macOS, `nexus-ai.bat` on Windows). Java 11+ required.
 
 ## Verify
-Android APK SHA-256: `4c10d5352fa1185de420bd167eeaa6ec92f96b9d427d17794fae7560ec6a3fcd`
-Desktop ZIP SHA-256: `a8d64b0db4816edf57c8cca3075bd30b8a0fd52ba3a47566147b6aa76d363853`
+Android APK SHA-256: `27af822d3f4cb40b3a80e5bc7119fed6b11c1a8f147d6ee5b473f728125a6523`
+Desktop ZIP SHA-256: `1b23365651b54d07862b4c2eb347d4e4cbade4b80f87100fc2dbe3b7f911f807`

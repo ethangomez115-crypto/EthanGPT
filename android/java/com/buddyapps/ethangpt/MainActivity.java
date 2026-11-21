@@ -646,15 +646,18 @@ public class MainActivity extends Activity {
                     if (!done) {
                         float dx = e.getX() - x0;
                         float dy = e.getY() - y0;
-                        if (Math.abs(dx) > 90 && Math.abs(dx) > Math.abs(dy) * 1.6f) {
+                        // Same sensitivity as the chat screen's SwipeScrollView
+                        // so the gesture feels identical on every tab.
+                        if (Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy) * 1.4f) {
                             done = true;
                             if (listener != null) {
-                                float edge = dpPx() * 150;
+                                float edge = 140f;
                                 // Swipe right from the left edge opens the menu.
                                 if (dx > 0 && x0 < edge) listener.onOpen();
                                 // Swipe left from the right edge opens the Code IDE.
                                 else if (dx < 0 && x0 > getWidth() - edge) listener.onOpenCode();
-                                // Any other left swipe closes the drawer (self-guarded).
+                                // Any other left swipe closes the drawer (self-guarded),
+                                // exactly like the chat screen.
                                 else if (dx < 0) listener.onClose();
                             }
                         }

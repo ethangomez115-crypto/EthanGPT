@@ -20,6 +20,7 @@ Description: |
   - Swipe in from the right edge on any tab to open the Code IDE; left edge opens the menu.
   - Clean code editor (view/edit code like Google AI Studio, with Copy / Preview / Ask Nexus).
   - Google AI Studio-inspired dark UI and Kimi-style gradient pill buttons.
+  - Swipe sensitivity and behavior unified across all tabs to match the chat screen.
   - Chat backup to shared storage that survives uninstall/reinstall.
   - Share chats, files and images to any app (WhatsApp, Gmail, Drive...).
   - Terminal and Code IDE tabs.
@@ -30,8 +31,8 @@ Description: |
 RepoType: git
 Repo: https://github.com/ethangomez115-crypto/EthanGPT
 Builds:
-  - versionName: 15.4
-    versionCode: 34
+  - versionName: 15.5
+    versionCode: 35
     commit: master
     subdir: android
     # Built with the no-Gradle toolchain at .claude/skills/android-app/build-apk.sh
