@@ -6,36 +6,33 @@ AuthorName: Ethan Gomez
 SourceCode: https://github.com/ethangomez115-crypto/EthanGPT
 IssueTracker: https://github.com/ethangomez115-crypto/EthanGPT/issues
 Changelog: https://github.com/ethangomez115-crypto/EthanGPT/releases
-Summary: On-device AI assistant with offline model, chat backup, image generation, code IDE and browser
+Summary: On-device AI assistant with offline model, chat backup, image generation, project previews and model presets
 Description: |
   Nexus AI is an original on-device AI assistant for Android 8.0+.
 
   Features:
   - Offline built-in N-gram language model — no internet or account needed.
   - Optional online mode with your own free-tier key (Groq / OpenRouter / Gemini / DeepSeek).
-  - Interactive chat text: select, copy, save to file or share any reply.
+  - Interactive chat text: select, copy, save to file, share and preview.
   - Keyless image generation from a text prompt; save, share or open images.
-  - Local website preview served on 127.0.0.1 from the Code IDE.
-  - Code IDE connected to chat ("Ask Nexus" and "Open in IDE").
+  - Projects screen: a list of generated sites that open in a full-screen local preview.
+  - Model presets: Nexus 3.1 Pro / 2.8 Preview / Instant, with thinking effort and context length controls.
   - Half-width swipe-out drawer that keeps the chat visible beside it.
-  - Swipe-only navigation: left edge for the menu, right edge for the next workspace, right swipe for the previous one.
-  - Provider / key settings are accessed from the AUTO pill in the top bar (no AI settings menu entry).
+  - Chat is the only screen; the Code IDE and web browser have been removed.
+  - Hidden provider / key settings: long-press the drawer title.
   - Claude Code-inspired warm dark theme with cream text and terracotta accents.
   - Skills menu with slash commands (/review, /fix, /test, /docs and more) that load real prompts into chat.
   - Plus button attaches any file to the chat (text up to 20,000 characters, binary files by size).
-  - Clean code editor (view/edit code with Copy / Preview / Ask Nexus).
   - Chat backup to shared storage that survives uninstall/reinstall.
   - Share chats, files and images to any app (WhatsApp, Gmail, Drive...).
-  - Terminal, Code IDE and Web workspaces (no bottom tabs).
-  - Real WebView browser with "Open in browser" and "Share link".
   - Works on low-RAM phones (under 8 GB RAM uses online mode automatically).
 
   No API keys are bundled. No telemetry, analytics or ads.
 RepoType: git
 Repo: https://github.com/ethangomez115-crypto/EthanGPT
 Builds:
-  - versionName: 15.7
-    versionCode: 37
+  - versionName: 15.8
+    versionCode: 41
     commit: master
     subdir: android
     # Built with the no-Gradle toolchain at .claude/skills/android-app/build-apk.sh

@@ -16,8 +16,8 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * A tiny loopback-only HTTP server used to preview websites generated in the
- * Code IDE. It binds to 127.0.0.1 only, so nothing is exposed to the network.
+ * A tiny loopback-only HTTP server used to preview websites generated in chat.
+ * It binds to 127.0.0.1 only, so nothing is exposed to the network.
  * Pure Java — shared by the Android and desktop builds.
  */
 public final class LocalPreviewServer {

@@ -102,6 +102,9 @@ public class MainActivity extends Activity {
     private static final String PREF_KEY = "apiKey";
     private static final String PREF_OPENAI_KEY = "openaiKey";
     private static final String PREF_MODEL = "model";
+    private static final String PREF_TIER = "tier";
+    private static final String PREF_THINKING = "thinking";
+    private static final String PREF_CONTEXT = "context";
     private static final String PREF_CHATS = "chats";
     private static final String PREF_ACTIVE_CHAT = "active_chat";
 
@@ -126,7 +129,6 @@ public class MainActivity extends Activity {
     private SwipeScrollView chatScroll;
     private LinearLayout chatList;
     private EditText input;
-    private TextView statusText;
     private View welcomeView;
     private FrameLayout actionButton;
     private IconView actionIcon;
@@ -159,9 +161,14 @@ public class MainActivity extends Activity {
     private boolean drawerOpen = false;
     private int drawerWidth = 0;
 
-    // --- swipe navigation between workspaces (no visible tab bar) ---
-    private View[] tabPages;
-    private int currentTab = 0;
+    // --- chat is the only screen; projects + model settings open over it ---
+    private ProjectsView projectsView;
+    private View projectsOverlay;
+    private View modelOverlay;
+    private TextView modelCurrentValue;
+    private TextView modelThinkingValue;
+    private TextView modelContextValue;
+    private SwipeContainer rootContainer;
 
     // --- voice agent ---
     private TextToSpeech tts;
@@ -222,7 +229,7 @@ public class MainActivity extends Activity {
         // the new tab bar (which reserves the nav-bar inset itself).
         mainView.setPadding(0, topInset, 0, 0);
 
-        // --- Top bar: ☰ | AUTO pill | sound ---
+        // --- Top bar: ☰ | sound ---
         LinearLayout topBar = new LinearLayout(this);
         topBar.setOrientation(LinearLayout.HORIZONTAL);
         topBar.setGravity(Gravity.CENTER_VERTICAL);
@@ -233,25 +240,6 @@ public class MainActivity extends Activity {
             @Override public void onClick(View v) { openDrawer(); }
         });
         topBar.addView(menu);
-
-        statusText = new TextView(this);
-        statusText.setTextSize(13);
-        statusText.setTextColor(C_TEXT);
-        statusText.setPadding(dp(16), dp(9), dp(16), dp(9));
-        GradientDrawable statusBg = gradientPill(C_PILL_A, C_PILL_B,22);
-        statusBg.setStroke(dp(1), C_PILL_STROKE);
-        statusText.setBackground(statusBg);
-        statusText.setSingleLine(true);
-        LinearLayout.LayoutParams pl = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        pl.leftMargin = dp(10);
-        statusText.setLayoutParams(pl);
-        statusText.setClickable(true);
-        // The AUTO pill is now the only way to change provider / API key.
-        statusText.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { showOnlineSettings(); }
-        });
-        topBar.addView(statusText);
 
         View topSpacer = new View(this);
         topSpacer.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
@@ -328,8 +316,11 @@ public class MainActivity extends Activity {
         chips.addView(chip(IconView.SPARKLE, "Code ideas", new View.OnClickListener() {
             @Override public void onClick(View v) { sendCodeIdeas(); }
         }));
-        chips.addView(chip(IconView.CODE, "Code IDE", new View.OnClickListener() {
-            @Override public void onClick(View v) { selectTab(2); }
+        chips.addView(chip(IconView.CODE, "Projects", new View.OnClickListener() {
+            @Override public void onClick(View v) { openProjects(); }
+        }));
+        chips.addView(chip(IconView.GEAR, "Model", new View.OnClickListener() {
+            @Override public void onClick(View v) { openModelSettings(); }
         }));
         chips.addView(chip(IconView.SPARKLE, "Image", new View.OnClickListener() {
             @Override public void onClick(View v) { generateImage(); }
@@ -396,27 +387,7 @@ public class MainActivity extends Activity {
         inputWrap.addView(inputPill);
         mainView.addView(inputWrap);
 
-        // --- Tool tabs: Terminal / Code IDE / Local Web ---
-        final View terminalPane = TerminalView.build(this);
-        final View codePane = CodeIdeView.build(this, new CodeIdeView.CodeHost() {
-            @Override public void onPreview(String url) {
-                LocalBrowserView.loadUrl(url);
-                selectTab(3);
-            }
-            @Override public void onSendToChat(String code) {
-                input.setText(code);
-                selectTab(0);
-                input.requestFocus();
-                Toast.makeText(MainActivity.this, "Code added to chat — ask Nexus about it",
-                        Toast.LENGTH_SHORT).show();
-            }
-        });
-        final View browserPane = LocalBrowserView.build(this);
-        terminalPane.setVisibility(View.GONE);
-        codePane.setVisibility(View.GONE);
-        browserPane.setVisibility(View.GONE);
-
-        // --- Tab host: page area (weight 1) + bottom tab bar ---
+        // --- Chat is the only screen; projects preview is an overlay over it ---
         LinearLayout tabHost = new LinearLayout(this);
         tabHost.setOrientation(LinearLayout.VERTICAL);
         tabHost.setBackgroundColor(C_BG);
@@ -424,24 +395,14 @@ public class MainActivity extends Activity {
         FrameLayout pageArea = new FrameLayout(this);
         pageArea.addView(mainView, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        pageArea.addView(terminalPane, new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        pageArea.addView(codePane, new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        pageArea.addView(browserPane, new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         tabHost.addView(pageArea, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
-
-        tabPages = new View[] { mainView, terminalPane, codePane, browserPane };
-        // No bottom tab bar — swipe gestures move between workspaces. Reserve
-        // the system nav-bar inset inside the page area so nothing is hidden.
+        // Reserve the system nav-bar inset so nothing is hidden behind it.
         pageArea.setPadding(0, 0, 0, bottomInset);
-        // Initial workspace: Chat
-        selectTab(0);
 
-        // --- Container: tab host + scrim + drawer ---
+        // --- Container: chat + scrim + drawer + overlays ---
         SwipeContainer container = new SwipeContainer(this);
+        rootContainer = container;
         container.setSwipeListener(new DrawerSwipe());
         container.setBackgroundColor(C_BG);
         container.addView(tabHost, new FrameLayout.LayoutParams(
@@ -470,6 +431,21 @@ public class MainActivity extends Activity {
         container.addView(voiceOverlay, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
+        projectsView = ProjectsView.create(this, new Runnable() {
+            @Override public void run() { closeProjects(); }
+        });
+        projectsOverlay = projectsView.getView();
+        projectsOverlay.setPadding(0, statusBarHeight(), 0, 0);
+        projectsOverlay.setVisibility(View.GONE);
+        container.addView(projectsOverlay, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        modelOverlay = buildModelSettings();
+        modelOverlay.setPadding(0, statusBarHeight(), 0, 0);
+        modelOverlay.setVisibility(View.GONE);
+        container.addView(modelOverlay, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
         setContentView(container);
 
         initTts();
@@ -477,27 +453,234 @@ public class MainActivity extends Activity {
         loadModel();
     }
 
-    /** Switch the visible pane: 0=Chat, 1=Terminal, 2=Code IDE, 3=Web. */
-    private void selectTab(int idx) {
-        if (tabPages == null || idx < 0 || idx >= tabPages.length) return;
-        for (int k = 0; k < tabPages.length; k++) {
-            tabPages[k].setVisibility(k == idx ? View.VISIBLE : View.GONE);
+    /** Show the projects preview over the chat. */
+    private void openProjects() {
+        closeDrawer();
+        if (projectsOverlay == null || projectsView == null) return;
+        projectsView.refresh();
+        projectsOverlay.setVisibility(View.VISIBLE);
+        projectsOverlay.bringToFront();
+    }
+
+    /** Hide the projects preview and return to the chat. */
+    private void closeProjects() {
+        if (projectsOverlay != null) projectsOverlay.setVisibility(View.GONE);
+    }
+
+    // -------------------------- model settings ---------------------------- //
+
+    private static final String[] TIER_NAMES = {
+            "Nexus 3.1 Pro", "Nexus 2.8 Preview", "Nexus Instant"
+    };
+    private static final String[] TIER_DESC = {
+            "Complex tasks and professional work, all-around flagship",
+            "Well-rounded and efficient for everyday tasks",
+            "Fast chat, quick replies"
+    };
+    private static final String[] THINKING_NAMES = { "Low", "Medium", "High" };
+    private static final String[] CONTEXT_NAMES = { "Short", "Standard", "Long" };
+
+    private void openModelSettings() {
+        closeDrawer();
+        refreshModelSettings();
+        if (modelOverlay == null) return;
+        modelOverlay.setVisibility(View.VISIBLE);
+        modelOverlay.bringToFront();
+    }
+
+    private void closeModelSettings() {
+        if (modelOverlay != null) modelOverlay.setVisibility(View.GONE);
+    }
+
+    @Override public void onBackPressed() {
+        if (modelOverlay != null && modelOverlay.getVisibility() == View.VISIBLE) {
+            closeModelSettings();
+            return;
         }
-        currentTab = idx;
+        if (projectsOverlay != null && projectsOverlay.getVisibility() == View.VISIBLE) {
+            closeProjects();
+            return;
+        }
+        if (drawerOpen) {
+            closeDrawer();
+            return;
+        }
+        super.onBackPressed();
     }
 
-    private static final String[] WORKSPACE_NAMES = { "Chat", "Terminal", "Code IDE", "Web" };
+    private View buildModelSettings() {
+        FrameLayout root = new FrameLayout(this);
+        root.setBackgroundColor(C_BG);
+        ScrollView scroll = new ScrollView(this);
+        LinearLayout col = new LinearLayout(this);
+        col.setOrientation(LinearLayout.VERTICAL);
+        col.setPadding(dp(18), dp(18), dp(18), dp(28));
+        scroll.addView(col, new ScrollView.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        root.addView(scroll, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
-    /** Cycle to the next workspace with a left swipe from the right edge. */
-    private void nextWorkspace() {
-        selectTab((currentTab + 1) % tabPages.length);
-        Toast.makeText(this, WORKSPACE_NAMES[currentTab], Toast.LENGTH_SHORT).show();
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        TextView title = new TextView(this);
+        title.setText("Model");
+        title.setTextSize(23);
+        title.setTextColor(C_TEXT);
+        header.addView(title, new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        TextView close = new TextView(this);
+        close.setText("\u00d7");
+        close.setTextSize(26);
+        close.setTextColor(C_TEXT);
+        close.setPadding(dp(10), 0, dp(4), 0);
+        close.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { closeModelSettings(); }
+        });
+        header.addView(close);
+        col.addView(header, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        for (int i = 0; i < TIER_NAMES.length; i++) {
+            final int tier = i;
+            LinearLayout card = new LinearLayout(this);
+            card.setOrientation(LinearLayout.VERTICAL);
+            card.setBackground(rounded(C_SURFACE, 14));
+            card.setPadding(dp(16), dp(14), dp(16), dp(14));
+            LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            cp.topMargin = dp(14);
+            card.setLayoutParams(cp);
+
+            TextView name = new TextView(this);
+            name.setText(TIER_NAMES[i]);
+            name.setTextSize(16);
+            name.setTextColor(C_TEXT);
+            card.addView(name);
+            TextView desc = new TextView(this);
+            desc.setText(TIER_DESC[i]);
+            desc.setTextSize(13);
+            desc.setTextColor(C_TEXT_DIM);
+            desc.setPadding(0, dp(3), 0, 0);
+            card.addView(desc);
+
+            card.setClickable(true);
+            card.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { chooseTier(tier); }
+            });
+            col.addView(card);
+        }
+
+        modelCurrentValue = settingRow(col, "More models", "", new View.OnClickListener() {
+            @Override public void onClick(View v) { showFreeModelPicker(); }
+        });
+        modelThinkingValue = settingRow(col, "Thinking effort", "", new View.OnClickListener() {
+            @Override public void onClick(View v) { chooseThinking(); }
+        });
+        modelContextValue = settingRow(col, "Context length", "", new View.OnClickListener() {
+            @Override public void onClick(View v) { chooseContext(); }
+        });
+        refreshModelSettings();
+        return root;
     }
 
-    /** Cycle to the previous workspace with a right swipe from the right edge. */
-    private void prevWorkspace() {
-        selectTab((currentTab + tabPages.length - 1) % tabPages.length);
-        Toast.makeText(this, WORKSPACE_NAMES[currentTab], Toast.LENGTH_SHORT).show();
+    private TextView settingRow(LinearLayout parent, String label, String value,
+                                View.OnClickListener click) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setBackground(rounded(C_SURFACE, 14));
+        row.setPadding(dp(16), dp(14), dp(16), dp(14));
+        LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        rp.topMargin = dp(10);
+        row.setLayoutParams(rp);
+
+        TextView l = new TextView(this);
+        l.setText(label);
+        l.setTextSize(15);
+        l.setTextColor(C_TEXT);
+        row.addView(l, new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView v = new TextView(this);
+        v.setText(value);
+        v.setTextSize(14);
+        v.setTextColor(C_ACCENT);
+        v.setPadding(dp(8), 0, dp(6), 0);
+        row.addView(v);
+
+        TextView arrow = new TextView(this);
+        arrow.setText("\u203a");
+        arrow.setTextSize(20);
+        arrow.setTextColor(C_TEXT_DIM);
+        row.addView(arrow);
+
+        row.setClickable(true);
+        row.setOnClickListener(click);
+        parent.addView(row);
+        return v;
+    }
+
+    private void refreshModelSettings() {
+        if (modelCurrentValue == null) return;
+        int provider = prefs.getInt(PREF_PROVIDER, 0);
+        String m = prefs.getString(PREF_MODEL, "");
+        if (m.isEmpty()) m = OnlineClient.defaultModel(provider);
+        modelCurrentValue.setText(m);
+        int t = clamp2(prefs.getInt(PREF_THINKING, 1));
+        int c = clamp2(prefs.getInt(PREF_CONTEXT, 1));
+        modelThinkingValue.setText(THINKING_NAMES[t]);
+        modelContextValue.setText(CONTEXT_NAMES[c]);
+    }
+
+    private static int clamp2(int v) { return v < 0 ? 0 : (v > 2 ? 2 : v); }
+
+    private void chooseTier(int tier) {
+        int provider = prefs.getInt(PREF_PROVIDER, 0);
+        int thinking = tier == 0 ? 2 : (tier == 1 ? 1 : 0);
+        int context = tier == 0 ? 2 : (tier == 1 ? 1 : 0);
+        String model;
+        if (provider == 1) model = tier == 2 ? "llama-3.1-8b-instant" : "llama-3.3-70b-versatile";
+        else if (provider == 2) model = tier == 2 ? "gemini-2.5-flash-lite" : "gemini-2.5-flash";
+        else if (provider == 3) model = tier == 0 ? "deepseek-reasoner" : "deepseek-chat";
+        else model = "openrouter/free";
+        prefs.edit().putInt(PREF_TIER, tier).putInt(PREF_THINKING, thinking)
+                .putInt(PREF_CONTEXT, context).putString(PREF_MODEL, model).apply();
+        refreshModelSettings();
+        Toast.makeText(this, TIER_NAMES[tier] + " selected", Toast.LENGTH_SHORT).show();
+    }
+
+    private void chooseThinking() {
+        final int[] cur = { clamp2(prefs.getInt(PREF_THINKING, 1)) };
+        new AlertDialog.Builder(this)
+                .setTitle("Thinking effort")
+                .setSingleChoiceItems(THINKING_NAMES, cur[0], new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int which) { cur[0] = which; }
+                })
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Save", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int which) {
+                        prefs.edit().putInt(PREF_THINKING, cur[0]).apply();
+                        refreshModelSettings();
+                    }
+                }).show();
+    }
+
+    private void chooseContext() {
+        final int[] cur = { clamp2(prefs.getInt(PREF_CONTEXT, 1)) };
+        new AlertDialog.Builder(this)
+                .setTitle("Context length")
+                .setSingleChoiceItems(CONTEXT_NAMES, cur[0], new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int which) { cur[0] = which; }
+                })
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Save", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int which) {
+                        prefs.edit().putInt(PREF_CONTEXT, cur[0]).apply();
+                        refreshModelSettings();
+                    }
+                }).show();
     }
 
     // --------------------------- helpers / style ---------------------------- //
@@ -660,8 +843,8 @@ public class MainActivity extends Activity {
     private final class DrawerSwipe implements SwipeContainer.SwipeListener {
         @Override public void onOpen() { openDrawer(); }
         @Override public void onClose() { closeDrawer(); }
-        @Override public void onNext() { closeDrawer(); nextWorkspace(); }
-        @Override public void onPrev() { closeDrawer(); prevWorkspace(); }
+        @Override public void onNext() { }
+        @Override public void onPrev() { }
     }
 
     /** A ScrollView that lets a horizontal swipe open/close the history drawer. */
@@ -984,11 +1167,9 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** Connection state is implicit now — the status pill was removed. */
     private void updateStatus() {
-        if (statusText == null) return;
-        boolean online = isInternetAvailable();
-        statusText.setText("AUTO · " + (online ? "online" : "offline"));
-        statusText.setTextColor(online ? C_TEXT : C_TEXT_DIM);
+        // No visible status indicator; AUTO still picks online/offline per message.
     }
 
     private void toggleSound() {
@@ -2174,6 +2355,16 @@ public class MainActivity extends Activity {
         titles.addView(sub);
         top.addView(titles);
 
+        // Hidden key access: long-press the drawer title to open provider / key
+        // settings without adding another visible button to the UI.
+        top.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override public boolean onLongClick(View v) {
+                closeDrawer();
+                showOnlineSettings();
+                return true;
+            }
+        });
+
         d.addView(top);
 
         // One scrollable menu so the Skills list fits on small screens too.
@@ -2195,6 +2386,14 @@ public class MainActivity extends Activity {
         menu.addView(sectionLabel("Chat"));
         menu.addView(menuRow(IconView.PLUS, "New chat", new View.OnClickListener() {
             @Override public void onClick(View v) { newChat(); }
+        }));
+
+        menu.addView(sectionLabel("Projects"));
+        menu.addView(menuRow(IconView.CODE, "Saved projects", new View.OnClickListener() {
+            @Override public void onClick(View v) { openProjects(); }
+        }));
+        menu.addView(menuRow(IconView.GEAR, "Model settings", new View.OnClickListener() {
+            @Override public void onClick(View v) { openModelSettings(); }
         }));
 
         // Claude Code-style slash-command skills. Each one pre-fills a real
@@ -2332,7 +2531,6 @@ public class MainActivity extends Activity {
     /** Load a skill's prompt into the chat box so the user can edit before sending. */
     private void applySkill(String prompt) {
         closeDrawer();
-        selectTab(0);
         input.setText(prompt);
         input.setSelection(prompt.length());
         input.requestFocus();
@@ -2701,23 +2899,27 @@ public class MainActivity extends Activity {
                 NexusFiles.share(MainActivity.this, uri, "text/plain", "Nexus AI reply");
             }
         }));
-        if (text.contains("```")) {
-            row.addView(textAction("Open in IDE", new View.OnClickListener() {
-                @Override public void onClick(View v) {
-                    CodeIdeView.openCode(extractCode(text));
-                    selectTab(2);
-                }
-            }));
-        }
-        if (text.contains("<!doctype") || text.contains("<html")) {
+        if (text.contains("```") || text.contains("<!doctype") || text.contains("<html")) {
             row.addView(textAction("Preview", new View.OnClickListener() {
                 @Override public void onClick(View v) {
-                    java.io.File dir = new java.io.File(getFilesDir(), "preview");
-                    dir.mkdirs();
-                    writeString(new java.io.File(dir, "index.html"), extractCode(text));
-                    String url = LocalPreviewServer.start(dir);
-                    LocalBrowserView.loadUrl(url);
-                    selectTab(3);
+                    String code = extractCode(text);
+                    String lower = code.toLowerCase(java.util.Locale.ROOT);
+                    String html = code;
+                    if (!lower.contains("<html") && !lower.contains("<!doctype")) {
+                        html = "<!doctype html><html><head><meta charset=\"utf-8\">"
+                                + "<title>Nexus preview</title></head>"
+                                + "<body style=\"background:#1f1e1d;color:#f5f4ef;"
+                                + "font-family:monospace;padding:16px;white-space:pre-wrap\">"
+                                + android.text.TextUtils.htmlEncode(code)
+                                + "</body></html>";
+                    }
+                    String name = ProjectsView.save(MainActivity.this, html, "Website");
+                    if (name == null) {
+                        Toast.makeText(MainActivity.this, "Nothing to preview",
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    openProjects();
                 }
             }));
         }
@@ -2733,14 +2935,6 @@ public class MainActivity extends Activity {
         if (nl < 0) return text;
         if (e < 0) e = text.length();
         return text.substring(nl + 1, e).trim();
-    }
-
-    private void writeString(java.io.File f, String s) {
-        try {
-            java.io.FileOutputStream out = new java.io.FileOutputStream(f);
-            out.write(s.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            out.close();
-        } catch (Exception ignored) { }
     }
 
     private TextView textAction(String label, View.OnClickListener listener) {
@@ -2877,15 +3071,23 @@ public class MainActivity extends Activity {
         }
         final int provider = prefs.getInt(PREF_PROVIDER, 0);
         final String modelName = prefs.getString(PREF_MODEL, "");
+        final int thinking = clamp2(prefs.getInt(PREF_THINKING, 1));
+        final int context = clamp2(prefs.getInt(PREF_CONTEXT, 1));
+        ArrayList<String[]> fullHistory = new ArrayList<>(bot.history());
+        int maxTurns = context == 0 ? 3 : (context >= 2 ? 20 : 8);
+        if (fullHistory.size() > maxTurns) {
+            fullHistory = new ArrayList<>(fullHistory.subList(
+                    fullHistory.size() - maxTurns, fullHistory.size()));
+        }
+        final ArrayList<String[]> history = fullHistory;
 
         new Thread(new Runnable() {
             @Override public void run() {
-                final ArrayList<String[]> history = new ArrayList<>(bot.history());
                 String answer = null;
                 String failure = null;
                 try {
                     answer = OnlineClient.chat(OnlineClient.providerId(provider), key,
-                            modelName, history, text);
+                            modelName, history, text, thinking, context);
                     bot.addTurn("user", text);
                     bot.addTurn("assistant", answer);
                 } catch (Exception e) {

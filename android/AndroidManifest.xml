@@ -2,8 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.buddyapps.ethangpt">
 
-    <!-- INTERNET is used only for the online mode (key built into the APK).
-         The offline model never touches the network. -->
+    <!-- INTERNET is used only for the online mode (key you add yourself) and
+         for the loopback project preview. The offline model never touches the
+         network. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Needed so AUTO mode can detect internet availability and switch itself. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />

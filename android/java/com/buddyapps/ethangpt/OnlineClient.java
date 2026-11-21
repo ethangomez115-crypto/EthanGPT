@@ -67,6 +67,16 @@ public final class OnlineClient {
 
     public static String chat(String provider, String apiKey, String model,
                               List<String[]> history, String message) throws Exception {
+        return chat(provider, apiKey, model, history, message, 1, 1);
+    }
+
+    /**
+     * @param thinking 0=low, 1=medium, 2=high reasoning effort
+     * @param context  0=short, 1=standard, 2=long reply / history budget
+     */
+    public static String chat(String provider, String apiKey, String model,
+                              List<String[]> history, String message,
+                              int thinking, int context) throws Exception {
         if (apiKey == null || apiKey.trim().isEmpty()) {
             throw new Exception("No online key is available.");
         }
@@ -75,9 +85,9 @@ public final class OnlineClient {
                 ? defaultModel(indexOf(provider)) : model.trim();
 
         if ("gemini".equals(provider)) {
-            return gemini(key, chosen, history, message);
+            return gemini(key, chosen, history, message, thinking, context);
         }
-        return openAiCompatible(provider, key, chosen, history, message);
+        return openAiCompatible(provider, key, chosen, history, message, thinking, context);
     }
 
     private static int indexOf(String provider) {
@@ -88,7 +98,8 @@ public final class OnlineClient {
     }
 
     private static String openAiCompatible(String provider, String key, String model,
-                                           List<String[]> history, String message) throws Exception {
+                                           List<String[]> history, String message,
+                                           int thinking, int context) throws Exception {
         boolean openRouter = "openrouter".equals(provider);
         String endpoint;
         if (openRouter) endpoint = "https://openrouter.ai/api/v1/chat/completions";
@@ -103,13 +114,19 @@ public final class OnlineClient {
         }
         messages.put(new JSONObject().put("role", "user").put("content", message));
 
+        int maxTokens = context == 0 ? 700 : (context >= 2 ? 4000 : 1800);
+        double temperature = thinking == 0 ? 0.25 : (thinking >= 2 ? 0.85 : 0.7);
         JSONObject body = new JSONObject()
                 .put("model", model)
                 .put("messages", messages)
-                .put("temperature", 0.7)
-                // Some free models are "reasoning" models and spend tokens on
-                // thinking before answering, so leave a generous budget.
-                .put("max_tokens", 1800);
+                .put("temperature", temperature)
+                .put("max_tokens", maxTokens);
+        // OpenRouter is the only endpoint here that accepts a reasoning-effort
+        // object; sending it to Groq or DeepSeek can be rejected as unknown.
+        if (openRouter && thinking > 0) {
+            body.put("reasoning", new JSONObject().put("effort",
+                    thinking >= 2 ? "high" : "medium"));
+        }
 
         String raw = post(endpoint, body, key, openRouter);
         JSONObject json = new JSONObject(raw);
@@ -146,7 +163,7 @@ public final class OnlineClient {
     }
 
     private static String gemini(String key, String model, List<String[]> history,
-                                 String message) throws Exception {
+                                 String message, int thinking, int context) throws Exception {
         String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/"
                 + URLEncoder.encode(model, "UTF-8")
                 + ":generateContent?key=" + URLEncoder.encode(key, "UTF-8");
@@ -162,8 +179,14 @@ public final class OnlineClient {
                 .put("role", "user")
                 .put("parts", new JSONArray().put(new JSONObject().put("text", message))));
 
+        JSONObject gen = new JSONObject()
+                .put("maxOutputTokens", context == 0 ? 700 : (context >= 2 ? 4000 : 1800))
+                .put("temperature", thinking == 0 ? 0.25 : (thinking >= 2 ? 0.85 : 0.7))
+                .put("thinkingConfig", new JSONObject().put("thinkingBudget",
+                        thinking == 0 ? 1024 : (thinking >= 2 ? 8192 : 4096)));
         JSONObject body = new JSONObject()
                 .put("contents", contents)
+                .put("generationConfig", gen)
                 .put("systemInstruction", new JSONObject()
                         .put("parts", new JSONArray().put(new JSONObject().put("text", SYSTEM))));
 
