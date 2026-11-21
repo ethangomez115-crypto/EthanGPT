@@ -32,17 +32,19 @@ FEATURES
 - Plus button attaches any file to the chat so you can ask about it
 - Local website preview (loopback-only) and Code IDE connected to chat
 - Clean code editor to view and edit code (Copy / Preview / Ask Nexus)
+- Half-width swipe-out drawer that keeps the chat visible beside it
 - Swipe-only navigation: left edge opens the menu, right edge cycles workspaces, right swipe goes back
+- Provider / key settings accessed from the AUTO pill in the top bar
 - Real WebView browser with "Open in browser" and "Share link"
 - Works on low-RAM phones (auto-switches to online mode below 8 GB RAM)
 - Desktop app for Windows, Linux and macOS (Java 11+)
 
 DOWNLOADS
-- Android: Nexus-AI-v15.6.apk (Android 8.0+, install from unknown sources)
-- Desktop: Nexus-AI-Desktop-v15.6.zip (unzip, run java -jar nexus-ai.jar)
+- Android: Nexus-AI-v15.7.apk (Android 8.0+, install from unknown sources)
+- Desktop: Nexus-AI-Desktop-v15.7.zip (unzip, run java -jar nexus-ai.jar)
 
 VERIFY
-APK SHA-256: bcf7e17e6922029f76ad7bad05a065e159548709dda9d691f8a5fbc0ae39c4d7
+APK SHA-256: 2fa9d935f7ea2a7be45ef03cc82ddd9c74c3ce7cbc298d47c06647567cc94cd0
 Desktop ZIP SHA-256: 1b23365651b54d07862b4c2eb347d4e4cbade4b80f87100fc2dbe3b7f911f807
 
 Source: https://github.com/ethangomez115-crypto/EthanGPT

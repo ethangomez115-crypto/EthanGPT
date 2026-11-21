@@ -247,8 +247,9 @@ public class MainActivity extends Activity {
         pl.leftMargin = dp(10);
         statusText.setLayoutParams(pl);
         statusText.setClickable(true);
+        // The AUTO pill is now the only way to change provider / API key.
         statusText.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { showInfo(); }
+            @Override public void onClick(View v) { showOnlineSettings(); }
         });
         topBar.addView(statusText);
 
@@ -456,9 +457,8 @@ public class MainActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         drawer = buildDrawer();
-        drawerWidth = Math.min(
-                (int) (getResources().getDisplayMetrics().widthPixels * 0.86f),
-                dp(340));
+        // Half-width drawer: a peek that still leaves the chat visible.
+        drawerWidth = (int) (getResources().getDisplayMetrics().widthPixels * 0.5f);
         FrameLayout.LayoutParams dl = new FrameLayout.LayoutParams(
                 drawerWidth, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.START);
         drawer.setLayoutParams(dl);
@@ -2223,11 +2223,6 @@ public class MainActivity extends Activity {
         menu.addView(skillRow("/brainstorm", "Generate creative ideas", IconView.SPARKLE,
                 "Brainstorm creative ideas for the following topic. Give me at least 8 "
                         + "varied suggestions, each with a one-line description:\n\n"));
-
-        menu.addView(sectionLabel("AI settings"));
-        menu.addView(menuRow(IconView.GEAR, "Online settings", new View.OnClickListener() {
-            @Override public void onClick(View v) { closeDrawer(); showOnlineSettings(); }
-        }));
 
         menu.addView(sectionLabel("Backup & share"));
         menu.addView(menuRow(IconView.SPARKLE, "Backup chats to file", new View.OnClickListener() {

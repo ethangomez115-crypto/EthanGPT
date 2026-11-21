@@ -17,7 +17,9 @@ Description: |
   - Keyless image generation from a text prompt; save, share or open images.
   - Local website preview served on 127.0.0.1 from the Code IDE.
   - Code IDE connected to chat ("Ask Nexus" and "Open in IDE").
+  - Half-width swipe-out drawer that keeps the chat visible beside it.
   - Swipe-only navigation: left edge for the menu, right edge for the next workspace, right swipe for the previous one.
+  - Provider / key settings are accessed from the AUTO pill in the top bar (no AI settings menu entry).
   - Claude Code-inspired warm dark theme with cream text and terracotta accents.
   - Skills menu with slash commands (/review, /fix, /test, /docs and more) that load real prompts into chat.
   - Plus button attaches any file to the chat (text up to 20,000 characters, binary files by size).
@@ -32,8 +34,8 @@ Description: |
 RepoType: git
 Repo: https://github.com/ethangomez115-crypto/EthanGPT
 Builds:
-  - versionName: 15.6
-    versionCode: 36
+  - versionName: 15.7
+    versionCode: 37
     commit: master
     subdir: android
     # Built with the no-Gradle toolchain at .claude/skills/android-app/build-apk.sh
